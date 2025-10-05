@@ -1,0 +1,89 @@
+﻿========================================
+  PROJECT STRUCTURE - FINALIZED
+========================================
+
+ROOT FILES:
+-----------
+.env.example          - Environment variables template
+.gitignore           - Git ignore rules
+.gitattributes       - Git attributes
+docker-compose.yml   - PostgreSQL & Redis containers
+Dockerfile           - Application containerization
+pom.xml              - Maven dependencies
+README.md            - Project documentation
+mvnw, mvnw.cmd       - Maven wrapper
+
+SOURCE CODE STRUCTURE:
+---------------------
+src/main/java/com/example/demo/
+â”œâ”€â”€ client/
+â”‚   â””â”€â”€ binance/         âœ“ Binance WebSocket integration
+â”‚       â”œâ”€â”€ config/      â†’ Binance configuration classes
+â”‚       â”œâ”€â”€ handler/     â†’ WebSocket message handlers  
+â”‚       â”œâ”€â”€ model/       â†’ Data models (AggTrade, Kline, Depth)
+â”‚       â””â”€â”€ service/     â†’ Binance services
+â”œâ”€â”€ config/              âœ“ Application configuration
+â”œâ”€â”€ controller/          âœ“ REST API controllers
+â”œâ”€â”€ dto/                 âœ“ Data Transfer Objects
+â”œâ”€â”€ jobs/                âœ“ Scheduled jobs
+â”œâ”€â”€ model/               âœ“ JPA entities
+â”œâ”€â”€ repository/          âœ“ Spring Data repositories
+â””â”€â”€ service/             âœ“ Business logic services
+
+RESOURCES:
+----------
+src/main/resources/
+â”œâ”€â”€ application.properties  âœ“ Configured (DB, Binance, Redis)
+â””â”€â”€ db/migration/          âœ“ Flyway migrations directory
+
+TEST STRUCTURE:
+--------------
+src/test/java/com/example/demo/
+â”œâ”€â”€ controller/         âœ“ Controller tests
+â”œâ”€â”€ integration/        âœ“ Integration tests
+â””â”€â”€ service/            âœ“ Service tests
+
+========================================
+  CONFIGURATION SUMMARY
+========================================
+
+DATABASE:
+---------
+Type:     PostgreSQL 15
+Host:     localhost:5432
+Database: mock_trading
+Username: postgres
+Password: phonghoang68
+Mode:     JPA auto-update enabled
+
+MARKET DATA:
+------------
+Provider: Binance WebSocket API
+URL:      wss://data-stream.binance.vision
+Streams:  AggTrade, Kline, Depth
+Symbols:  BTC, ETH, BNB, ADA, SOL
+
+CACHE:
+------
+Type:     Redis 7
+Host:     localhost:6379
+
+========================================
+  READY FOR DEVELOPMENT
+========================================
+
+START COMMAND:
+./mvnw spring-boot:run
+
+DEPENDENCIES INSTALLED:
+âœ“ Spring Boot 3.5.6
+âœ“ Spring Data JPA
+âœ“ Spring Security
+âœ“ Spring WebSocket
+âœ“ PostgreSQL Driver
+âœ“ Redis
+âœ“ Lombok
+âœ“ Jackson (JSON)
+âœ“ Java-WebSocket
+
+========================================
