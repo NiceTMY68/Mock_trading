@@ -134,16 +134,28 @@ be/
 
 ## API Endpoints
 
-### Binance Market Data
+### Authentication (Public - No JWT Required)
+- **POST** `/api/auth/register` - Register a new user
+  - Body: `{ "email": "user@example.com", "password": "password123", "fullName": "John Doe" }`
+  - Returns: `{ "token": "jwt-token", "expiresAt": "2024-...", "email": "...", "fullName": "..." }`
+- **POST** `/api/auth/login` - Login with credentials
+  - Body: `{ "email": "user@example.com", "password": "password123" }`
+  - Returns: `{ "token": "jwt-token", "expiresAt": "2024-...", "email": "...", "fullName": "..." }`
+
+### User Profile (Protected - Requires JWT)
+- **GET** `/api/auth/me` - Get current user information
+  - Header: `Authorization: Bearer <jwt-token>`
+
+### Binance Market Data (Protected - Requires JWT)
 - **GET** `/api/binance/symbols` - List all trading symbols
 - **GET** `/api/binance/ticker24hr` - 24hr ticker statistics
 - **GET** `/api/binance/ticker24hr/{symbol}` - 24hr ticker for specific symbol
 
-### WebSocket Streams
+### WebSocket Streams (Protected - Requires JWT)
 - **POST** `/api/binance/ws/subscribe` - Subscribe to Binance WebSocket streams
 - **POST** `/api/binance/ws/unsubscribe` - Unsubscribe from streams
 
-### News Data
+### News Data (Protected - Requires JWT)
 - **GET** `/api/news` - Fetch cryptocurrency news
 
 ## Troubleshooting
