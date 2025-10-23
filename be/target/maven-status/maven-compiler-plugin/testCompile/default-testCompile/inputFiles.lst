@@ -4,6 +4,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\cont
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\DemoApplicationTests.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\AuthIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\BinanceMarketIntegrationTest.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\RateLimitIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\TestRunner.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\util\ParamNormalizerTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\util\ParamValidatorTest.java
