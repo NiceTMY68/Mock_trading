@@ -3,13 +3,18 @@ package com.example.demo.controller.binance;
 import com.example.demo.client.binance.model.BinanceSymbolInfo;
 import com.example.demo.client.binance.model.BinanceTicker24hr;
 import com.example.demo.client.binance.service.BinanceRestClient;
+import com.example.demo.dto.KlineParams;
 import com.example.demo.entity.User;
+import com.example.demo.exception.BadRequestException;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuditService;
+import com.example.demo.util.ParamNormalizer;
+import com.example.demo.util.ParamValidator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +35,8 @@ public class BinanceMarketController {
     private final AuditService auditService;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final ParamNormalizer paramNormalizer;
+    private final ParamValidator paramValidator;
 
     private UUID getCurrentUserId() {
         try {
@@ -37,6 +44,19 @@ public class BinanceMarketController {
             if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
                 String email = auth.getName();
                 return userRepository.findByEmail(email).map(User::getId).orElse(null);
+            }
+        } catch (Exception e) {
+            log.debug("Could not get current user", e);
+        }
+        return null;
+    }
+    
+    private User getCurrentUser() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                String email = auth.getName();
+                return userRepository.findByEmail(email).orElse(null);
             }
         } catch (Exception e) {
             log.debug("Could not get current user", e);
@@ -314,6 +334,75 @@ public class BinanceMarketController {
             long latencyMs = System.currentTimeMillis() - startTime;
             auditService.finishRequest(requestId, false, "binance", 
                 objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Get kline/candlestick data with parameter validation
+     * Demonstrates normalize → validate → call pattern
+     */
+    @GetMapping("/kline")
+    public ResponseEntity<?> getKlineData(@RequestParam Map<String, String> rawParams) {
+        UUID requestId = UUID.randomUUID();
+        long startTime = System.currentTimeMillis();
+        
+        try {
+            // Step 1: Normalize parameters
+            KlineParams klineParams = paramNormalizer.normalizeKlineParams(rawParams);
+            
+            // Step 2: Validate parameters (with user context for tier-based limits)
+            User currentUser = getCurrentUser();
+            paramValidator.validateKlineParams(currentUser, klineParams);
+            
+            // Step 3: Convert to JSON for audit logging
+            JsonNode paramsNode = objectMapper.valueToTree(klineParams);
+            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/market/kline", paramsNode);
+            
+            // Step 4: Call external provider (mocked for now - would call binanceRestClient.getKlineData)
+            // For demonstration, we'll return the normalized and validated params
+            Map<String, Object> mockKlineData = new HashMap<>();
+            mockKlineData.put("symbol", klineParams.getSymbol());
+            mockKlineData.put("interval", klineParams.getInterval());
+            mockKlineData.put("data", List.of()); // Would be actual kline data
+            mockKlineData.put("normalizedParams", klineParams);
+            
+            // Step 5: Log completion
+            long latencyMs = System.currentTimeMillis() - startTime;
+            JsonNode providerMeta = objectMapper.createObjectNode()
+                    .put("symbol", klineParams.getSymbol())
+                    .put("interval", klineParams.getInterval())
+                    .put("limit", klineParams.getLimit());
+            auditService.finishRequest(requestId, false, "binance", providerMeta, latencyMs);
+            
+            // Step 6: Return response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("requestId", requestId.toString());
+            response.put("data", mockKlineData);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (BadRequestException e) {
+            log.warn("Invalid kline parameters: {}", e.getMessage());
+            long latencyMs = System.currentTimeMillis() - startTime;
+            auditService.finishRequest(requestId, false, "binance", 
+                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("requestId", requestId.toString());
+            errorResponse.put("error", e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            
+        } catch (Exception e) {
+            log.error("Error getting kline data: {}", e.getMessage(), e);
+            long latencyMs = System.currentTimeMillis() - startTime;
+            auditService.finishRequest(requestId, false, "binance", 
+                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
+            
             return ResponseEntity.internalServerError()
                     .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
         }
