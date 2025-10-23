@@ -37,7 +37,7 @@ public class RequestLog {
     private String provider;
 
     @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
+    @Column(columnDefinition = "json")
     private JsonNode normalizedParams;
 
     @Column(nullable = false)
@@ -50,7 +50,7 @@ public class RequestLog {
     private Instant createdAt;
 
     @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
+    @Column(columnDefinition = "json")
     private JsonNode providerMeta;
 
     @PrePersist
