@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="com.example.demo.service.PriceServiceTest" time="0.059" tests="8" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="com.example.demo.service.FeatureFlagServiceTest" time="0.066" tests="17" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="24"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -66,18 +66,21 @@
     <property name="java.class.version" value="68.0"/>
     <property name="LOGGED_APPLICATION_NAME" value="[crypto-mock-trading] "/>
   </properties>
-  <testcase name="persistTickerData_ShouldSaveSnapshot_WhenValidData" classname="com.example.demo.service.PriceServiceTest" time="0.036"/>
-  <testcase name="persistKlineData_ShouldSaveSnapshots_WhenValidData" classname="com.example.demo.service.PriceServiceTest" time="0.004">
-    <system-out><![CDATA[2025-10-24T01:06:59.649+07:00  INFO 89436 --- [crypto-mock-trading] [           main] com.example.demo.service.PriceService    : Persisted 2 price snapshots for symbol: BTCUSDT
-]]></system-out>
-  </testcase>
-  <testcase name="getAvailableSymbols_ShouldReturnSymbols_WhenFound" classname="com.example.demo.service.PriceServiceTest" time="0.004"/>
-  <testcase name="getSnapshotsByTimeRange_ShouldReturnSnapshots_WhenFound" classname="com.example.demo.service.PriceServiceTest" time="0.004"/>
-  <testcase name="getRecentSnapshots_ShouldReturnSnapshots_WhenFound" classname="com.example.demo.service.PriceServiceTest" time="0.002"/>
-  <testcase name="getSnapshotCount_ShouldReturnCount_WhenFound" classname="com.example.demo.service.PriceServiceTest" time="0.001"/>
-  <testcase name="persistKlineData_ShouldNotSave_WhenEmptyData" classname="com.example.demo.service.PriceServiceTest" time="0.001"/>
-  <testcase name="cleanupOldSnapshots_ShouldDeleteSnapshots_WhenCalled" classname="com.example.demo.service.PriceServiceTest" time="0.002">
-    <system-out><![CDATA[2025-10-24T01:06:59.670+07:00  INFO 89436 --- [crypto-mock-trading] [           main] com.example.demo.service.PriceService    : Cleaned up old snapshots for symbol: BTCUSDT before: 2025-10-22T18:06:59.670164300Z
-]]></system-out>
-  </testcase>
+  <testcase name="isBacktestingEnabled_ShouldReturnTrue_WhenPremiumSubscription" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.042"/>
+  <testcase name="hasPremiumSubscription_ShouldReturnTrue_WhenPremiumSubscriptionExists" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.002"/>
+  <testcase name="isFeatureEnabled_ShouldReturnFalse_WhenFreeSubscriptionTriesPremiumFeature" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.001"/>
+  <testcase name="getUserPlan_ShouldReturnFree_WhenNoActiveSubscription" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.0"/>
+  <testcase name="getUserPlan_ShouldReturnFree_WhenUserIdIsNull" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.0"/>
+  <testcase name="isFeatureEnabled_ShouldReturnFalse_WhenUserIdIsNull" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.0"/>
+  <testcase name="isFeatureEnabled_ShouldReturnTrue_WhenActiveFreeSubscription" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.001"/>
+  <testcase name="isStreamingEnabled_ShouldReturnTrue_WhenPremiumSubscription" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.001"/>
+  <testcase name="getUserPlan_ShouldReturnPlanId_WhenActiveSubscription" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.001"/>
+  <testcase name="isFeatureEnabled_ShouldReturnFalse_WhenSubscriptionExpired" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.001"/>
+  <testcase name="hasPremiumSubscription_ShouldReturnFalse_WhenNoPremiumSubscription" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.001"/>
+  <testcase name="isFeatureEnabled_ShouldReturnTrue_WhenActivePremiumSubscription" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.001"/>
+  <testcase name="isFeatureEnabled_ShouldReturnFalse_WhenSubscriptionCanceled" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.007"/>
+  <testcase name="hasActiveSubscription_ShouldReturnFalse_WhenNoActiveSubscription" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.002"/>
+  <testcase name="isAiAnalysisEnabled_ShouldReturnFalse_WhenFreeSubscription" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.001"/>
+  <testcase name="isFeatureEnabled_ShouldReturnFalse_WhenNoActiveSubscription" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.001"/>
+  <testcase name="hasActiveSubscription_ShouldReturnTrue_WhenActiveSubscriptionExists" classname="com.example.demo.service.FeatureFlagServiceTest" time="0.001"/>
 </testsuite>
