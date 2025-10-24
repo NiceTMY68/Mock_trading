@@ -8,6 +8,7 @@ import com.example.demo.entity.User;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuditService;
+import com.example.demo.service.FeatureFlagService;
 import com.example.demo.util.ParamNormalizer;
 import com.example.demo.util.ParamValidator;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,6 +38,7 @@ public class BinanceMarketController {
     private final ObjectMapper objectMapper;
     private final ParamNormalizer paramNormalizer;
     private final ParamValidator paramValidator;
+    private final FeatureFlagService featureFlagService;
 
     private UUID getCurrentUserId() {
         try {
@@ -349,6 +351,17 @@ public class BinanceMarketController {
         long startTime = System.currentTimeMillis();
         
         try {
+            // Check if user has access to historical data (premium feature)
+            UUID userId = getCurrentUserId();
+            if (userId != null && !featureFlagService.isHistoricalDataEnabled(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                                "success", false,
+                                "error", "Historical data access requires premium subscription",
+                                "requestId", requestId.toString()
+                        ));
+            }
+            
             // Step 1: Normalize parameters
             KlineParams klineParams = paramNormalizer.normalizeKlineParams(rawParams);
             

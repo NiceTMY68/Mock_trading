@@ -5,6 +5,7 @@ import com.example.demo.client.newsdata.service.NewsDataRestClient;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuditService;
+import com.example.demo.service.FeatureFlagService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class NewsDataController {
     private final AuditService auditService;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final FeatureFlagService featureFlagService;
 
     private UUID getCurrentUserId() {
         try {
@@ -48,6 +50,16 @@ public class NewsDataController {
         long startTime = System.currentTimeMillis();
         
         try {
+            // Check if user has access to crypto news (premium feature)
+            UUID userId = getCurrentUserId();
+            if (userId != null && !featureFlagService.isFeatureEnabled(userId, FeatureFlagService.REAL_TIME_ALERTS)) {
+                return ResponseEntity.status(403)
+                        .body(Map.of(
+                                "success", false,
+                                "error", "Crypto news access requires premium subscription",
+                                "requestId", requestId.toString()
+                        ));
+            }
             JsonNode params = objectMapper.valueToTree(parameters);
             auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/news/crypto", params);
             
