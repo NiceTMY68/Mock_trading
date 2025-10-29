@@ -27,4 +27,6 @@ public interface PriceSnapshotRepository extends JpaRepository<PriceSnapshot, Lo
     Long countByCoinSymbol(@Param("symbol") String symbol);
     
     void deleteByCoinSymbolAndTimestampBefore(String coinSymbol, Instant timestamp);
+    
+    PriceSnapshot findTopByCoinSymbolOrderByTimestampDesc(String coinSymbol);
 }

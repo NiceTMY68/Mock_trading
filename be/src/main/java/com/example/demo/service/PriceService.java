@@ -117,4 +117,19 @@ public class PriceService {
         priceSnapshotRepository.deleteByCoinSymbolAndTimestampBefore(symbol, cutoffTime);
         log.info("Cleaned up old snapshots for symbol: {} before: {}", symbol, cutoffTime);
     }
+    
+    public BigDecimal getLatestPrice(String symbol) {
+        try {
+            PriceSnapshot latestSnapshot = priceSnapshotRepository.findTopByCoinSymbolOrderByTimestampDesc(symbol);
+            if (latestSnapshot != null) {
+                return latestSnapshot.getClose();
+            }
+            
+            log.warn("No price data found for symbol: {}", symbol);
+            return null;
+        } catch (Exception e) {
+            log.error("Error getting latest price for symbol {}: {}", symbol, e.getMessage(), e);
+            return null;
+        }
+    }
 }
