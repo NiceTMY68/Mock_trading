@@ -41,4 +41,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     
     @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.userId = :userId AND o.side = 'SELL' AND o.status = 'FILLED' AND o.createdAt >= :fromDate")
     BigDecimal getTotalSellAmountByUserIdSince(@Param("userId") UUID userId, @Param("fromDate") Instant fromDate);
+    
+    List<Order> findByStatusOrderByCreatedAtAsc(Order.OrderStatus status);
 }

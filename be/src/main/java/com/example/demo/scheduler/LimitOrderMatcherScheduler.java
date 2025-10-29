@@ -1,0 +1,24 @@
+package com.example.demo.scheduler;
+
+import com.example.demo.service.OrderService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class LimitOrderMatcherScheduler {
+    
+    private final OrderService orderService;
+    
+    @Scheduled(fixedDelayString = "${app.limit.order.matcher.delay:5000}")
+    public void processPendingLimitOrders() {
+        try {
+            orderService.processPendingLimitOrders();
+        } catch (Exception e) {
+            log.error("Error in limit order matcher scheduler: {}", e.getMessage(), e);
+        }
+    }
+}

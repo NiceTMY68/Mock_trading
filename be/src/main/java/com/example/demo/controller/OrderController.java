@@ -44,7 +44,14 @@ public class OrderController {
                         ));
             }
             
-            OrderResponse response = orderService.placeMarketOrder(userId, dto);
+            OrderResponse response;
+            if (dto.getType() == com.example.demo.entity.Order.OrderType.MARKET) {
+                response = orderService.placeMarketOrder(userId, dto);
+            } else if (dto.getType() == com.example.demo.entity.Order.OrderType.LIMIT) {
+                response = orderService.createLimitOrder(userId, dto);
+            } else {
+                throw new IllegalArgumentException("Unsupported order type: " + dto.getType());
+            }
             
             log.info("Order placed successfully for user {}: {}", userId, response.getOrderId());
             
@@ -148,6 +155,41 @@ public class OrderController {
             log.error("Error getting holdings: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to get holdings", "message", e.getMessage()));
+        }
+    }
+    
+    @PatchMapping("/{orderId}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable UUID orderId, Authentication authentication) {
+        try {
+            UUID userId = getCurrentUserId(authentication);
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "User not authenticated"));
+            }
+            
+            if (!featureFlagService.isFeatureEnabled(userId, FeatureFlagService.REAL_TIME_ALERTS)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                                "error", "Trading requires premium subscription",
+                                "message", "Please upgrade to access trading features"
+                        ));
+            }
+            
+            OrderResponse response = orderService.cancelOrder(userId, orderId);
+            
+            log.info("Order cancelled successfully for user {}: {}", userId, orderId);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid cancel request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid cancel request", "message", e.getMessage()));
+                    
+        } catch (RuntimeException e) {
+            log.error("Error cancelling order: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to cancel order", "message", e.getMessage()));
         }
     }
     
