@@ -10,6 +10,7 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuditService;
 import com.example.demo.service.FeatureFlagService;
 import com.example.demo.util.ParamNormalizer;
+import com.example.demo.util.AuditLoggingHelper;
 import com.example.demo.util.ParamValidator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +40,7 @@ public class BinanceMarketController {
     private final ParamNormalizer paramNormalizer;
     private final ParamValidator paramValidator;
     private final FeatureFlagService featureFlagService;
+    private final AuditLoggingHelper auditLoggingHelper;
 
     private UUID getCurrentUserId() {
         try {
@@ -68,39 +70,23 @@ public class BinanceMarketController {
 
     @GetMapping("/top-3")
     public ResponseEntity<?> getTop3Coins() {
-        UUID requestId = UUID.randomUUID();
-        long startTime = System.currentTimeMillis();
-        
+        var ctx = auditLoggingHelper.start("/api/v1/binance/market/top-3", getCurrentUserId(), objectMapper.createObjectNode());
         try {
-            // Log request start
-            JsonNode params = objectMapper.createObjectNode();
-            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/market/top-3", params);
-            
             // Execute business logic
             List<BinanceTicker24hr> top3 = binanceRestClient.getTopCoinsByMarketCap(3);
-            
-            // Calculate latency
-            long latencyMs = System.currentTimeMillis() - startTime;
-            
-            // Log request completion
-            JsonNode providerMeta = objectMapper.createObjectNode()
-                    .put("count", top3.size());
-            auditService.finishRequest(requestId, false, "binance", providerMeta, latencyMs);
-            
+            JsonNode providerMeta = objectMapper.createObjectNode().put("count", top3.size());
+            auditLoggingHelper.finishSuccess(ctx, "binance", providerMeta);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("requestId", requestId.toString());
+            response.put("requestId", ctx.requestId().toString());
             response.put("data", top3);
             response.put("count", top3.size());
-            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error getting top 3 coins: {}", e.getMessage(), e);
-            long latencyMs = System.currentTimeMillis() - startTime;
-            auditService.finishRequest(requestId, false, "binance", 
-                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
+            auditLoggingHelper.finishError(ctx, "binance", e.getMessage());
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
+                    .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", e.getMessage()));
         }
     }
 
@@ -108,16 +94,8 @@ public class BinanceMarketController {
     public ResponseEntity<?> getTopCoins(
             @RequestParam int limit,
             @RequestParam String sortBy) {
-        UUID requestId = UUID.randomUUID();
-        long startTime = System.currentTimeMillis();
-        
+        var ctx = auditLoggingHelper.start("/api/v1/binance/market/top", getCurrentUserId(), objectMapper.createObjectNode().put("limit", limit).put("sortBy", sortBy));
         try {
-            // Log request start
-            JsonNode params = objectMapper.createObjectNode()
-                    .put("limit", limit)
-                    .put("sortBy", sortBy);
-            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/market/top", params);
-            
             List<BinanceTicker24hr> topCoins;
             
             switch (sortBy.toLowerCase()) {
@@ -126,23 +104,20 @@ public class BinanceMarketController {
                 case "gainers" -> topCoins = binanceRestClient.getTopGainers(limit);
                 case "losers" -> topCoins = binanceRestClient.getTopLosers(limit);
                 default -> {
-                    long latencyMs = System.currentTimeMillis() - startTime;
-                    auditService.finishRequest(requestId, false, "binance", 
-                        objectMapper.createObjectNode().put("error", "Invalid sortBy parameter"), latencyMs);
+                    auditLoggingHelper.finishError(ctx, "binance", "Invalid sortBy parameter");
                     return ResponseEntity.badRequest()
-                            .body(Map.of("success", false, "requestId", requestId.toString(), "error", "Invalid sortBy parameter"));
+                            .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", "Invalid sortBy parameter"));
                 }
             }
             
-            long latencyMs = System.currentTimeMillis() - startTime;
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("count", topCoins.size())
                     .put("sortBy", sortBy);
-            auditService.finishRequest(requestId, false, "binance", providerMeta, latencyMs);
+            auditLoggingHelper.finishSuccess(ctx, "binance", providerMeta);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("requestId", requestId.toString());
+            response.put("requestId", ctx.requestId().toString());
             response.put("data", topCoins);
             response.put("count", topCoins.size());
             response.put("sortBy", sortBy);
@@ -151,11 +126,9 @@ public class BinanceMarketController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error getting top coins: {}", e.getMessage(), e);
-            long latencyMs = System.currentTimeMillis() - startTime;
-            auditService.finishRequest(requestId, false, "binance", 
-                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
+            auditLoggingHelper.finishError(ctx, "binance", e.getMessage());
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
+                    .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", e.getMessage()));
         }
     }
 
@@ -164,16 +137,8 @@ public class BinanceMarketController {
             @RequestParam int page,
             @RequestParam int size,
             @RequestParam String sortBy) {
-        UUID requestId = UUID.randomUUID();
-        long startTime = System.currentTimeMillis();
-        
+        var ctx = auditLoggingHelper.start("/api/v1/binance/market/all", getCurrentUserId(), objectMapper.createObjectNode().put("page", page).put("size", size).put("sortBy", sortBy));
         try {
-            JsonNode params = objectMapper.createObjectNode()
-                    .put("page", page)
-                    .put("size", size)
-                    .put("sortBy", sortBy);
-            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/market/all", params);
-            
             List<BinanceTicker24hr> allTickers = binanceRestClient.getAllTicker24hr();
             
             List<BinanceTicker24hr> sortedTickers = switch (sortBy.toLowerCase()) {
@@ -189,15 +154,14 @@ public class BinanceMarketController {
             
             List<BinanceTicker24hr> paginatedTickers = sortedTickers.subList(start, end);
             
-            long latencyMs = System.currentTimeMillis() - startTime;
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("total", sortedTickers.size())
                     .put("returned", paginatedTickers.size());
-            auditService.finishRequest(requestId, false, "binance", providerMeta, latencyMs);
+            auditLoggingHelper.finishSuccess(ctx, "binance", providerMeta);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("requestId", requestId.toString());
+            response.put("requestId", ctx.requestId().toString());
             response.put("data", paginatedTickers);
             response.put("pagination", Map.of(
                     "page", page,
@@ -210,11 +174,9 @@ public class BinanceMarketController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error getting all coins: {}", e.getMessage(), e);
-            long latencyMs = System.currentTimeMillis() - startTime;
-            auditService.finishRequest(requestId, false, "binance", 
-                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
+            auditLoggingHelper.finishError(ctx, "binance", e.getMessage());
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
+                    .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", e.getMessage()));
         }
     }
 
@@ -222,15 +184,8 @@ public class BinanceMarketController {
     public ResponseEntity<?> searchCoins(
             @RequestParam String q,
             @RequestParam(required = false) Integer limit) {
-        UUID requestId = UUID.randomUUID();
-        long startTime = System.currentTimeMillis();
-        
+        var ctx = auditLoggingHelper.start("/api/v1/binance/market/search", getCurrentUserId(), objectMapper.createObjectNode().put("q", q).put("limit", limit != null ? limit : -1));
         try {
-            JsonNode params = objectMapper.createObjectNode()
-                    .put("q", q)
-                    .put("limit", limit != null ? limit : -1);
-            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/market/search", params);
-            
             List<BinanceTicker24hr> allTickers = binanceRestClient.getAllTicker24hr();
             
             List<BinanceTicker24hr> searchResults = allTickers.stream()
@@ -238,15 +193,14 @@ public class BinanceMarketController {
                     .limit(limit != null ? limit : allTickers.size())
                     .toList();
             
-            long latencyMs = System.currentTimeMillis() - startTime;
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("count", searchResults.size())
                     .put("query", q);
-            auditService.finishRequest(requestId, false, "binance", providerMeta, latencyMs);
+            auditLoggingHelper.finishSuccess(ctx, "binance", providerMeta);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("requestId", requestId.toString());
+            response.put("requestId", ctx.requestId().toString());
             response.put("data", searchResults);
             response.put("count", searchResults.size());
             response.put("query", q);
@@ -254,24 +208,16 @@ public class BinanceMarketController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error searching coins: {}", e.getMessage(), e);
-            long latencyMs = System.currentTimeMillis() - startTime;
-            auditService.finishRequest(requestId, false, "binance", 
-                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
+            auditLoggingHelper.finishError(ctx, "binance", e.getMessage());
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
+                    .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", e.getMessage()));
         }
     }
 
     @GetMapping("/coin/{symbol}")
     public ResponseEntity<?> getCoinDetails(@PathVariable String symbol) {
-        UUID requestId = UUID.randomUUID();
-        long startTime = System.currentTimeMillis();
-        
+        var ctx = auditLoggingHelper.start("/api/v1/binance/market/coin/" + symbol, getCurrentUserId(), objectMapper.createObjectNode().put("symbol", symbol));
         try {
-            JsonNode params = objectMapper.createObjectNode()
-                    .put("symbol", symbol);
-            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/market/coin/" + symbol, params);
-            
             List<BinanceTicker24hr> allTickers = binanceRestClient.getAllTicker24hr();
             
             BinanceTicker24hr coin = allTickers.stream()
@@ -280,31 +226,26 @@ public class BinanceMarketController {
                     .orElse(null);
             
             if (coin == null) {
-                long latencyMs = System.currentTimeMillis() - startTime;
-                auditService.finishRequest(requestId, false, "binance", 
-                    objectMapper.createObjectNode().put("found", false), latencyMs);
+                auditLoggingHelper.finishSuccess(ctx, "binance", objectMapper.createObjectNode().put("found", false));
                 return ResponseEntity.notFound().build();
             }
             
-            long latencyMs = System.currentTimeMillis() - startTime;
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("symbol", symbol)
                     .put("found", true);
-            auditService.finishRequest(requestId, false, "binance", providerMeta, latencyMs);
+            auditLoggingHelper.finishSuccess(ctx, "binance", providerMeta);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("requestId", requestId.toString());
+            response.put("requestId", ctx.requestId().toString());
             response.put("data", coin);
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error getting coin details: {}", e.getMessage(), e);
-            long latencyMs = System.currentTimeMillis() - startTime;
-            auditService.finishRequest(requestId, false, "binance", 
-                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
+            auditLoggingHelper.finishError(ctx, "binance", e.getMessage());
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
+                    .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", e.getMessage()));
         }
     }
 

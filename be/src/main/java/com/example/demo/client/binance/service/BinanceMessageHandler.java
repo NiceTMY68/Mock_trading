@@ -7,10 +7,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.example.demo.service.CacheService;
+import com.example.demo.config.CacheConfig;
+import com.example.demo.util.CacheKeyUtil;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -18,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 public class BinanceMessageHandler {
 
     private final ObjectMapper objectMapper;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final CacheService cacheService;
 
     public void handleMessage(String message) {
         try {
@@ -53,11 +54,11 @@ public class BinanceMessageHandler {
             AggTrade aggTrade = objectMapper.treeToValue(data, AggTrade.class);
             String symbol = aggTrade.getSymbol();
             
-            String redisKey = "binance:trade:" + symbol.toLowerCase();
-            redisTemplate.opsForValue().set(redisKey, aggTrade, 60, TimeUnit.SECONDS);
+            String tradeKey = CacheKeyUtil.tradeKey(symbol);
+            cacheService.put(tradeKey, aggTrade, CacheConfig.MARKET_DATA_TTL);
             
-            String priceKey = "binance:price:" + symbol.toLowerCase();
-            redisTemplate.opsForValue().set(priceKey, aggTrade.getPrice().toString(), 60, TimeUnit.SECONDS);
+            String priceKey = CacheKeyUtil.priceKey(symbol);
+            cacheService.put(priceKey, aggTrade.getPrice().toString(), CacheConfig.MARKET_DATA_TTL);
             
         } catch (Exception e) {
             log.error("Error handling AggTrade: {}", e.getMessage(), e);
@@ -70,8 +71,8 @@ public class BinanceMessageHandler {
             Kline.KlineData k = kline.getKline();
             String symbol = kline.getSymbol();
             
-            String redisKey = "binance:kline:" + symbol.toLowerCase() + ":" + k.getInterval();
-            redisTemplate.opsForValue().set(redisKey, kline, 60, TimeUnit.SECONDS);
+            String redisKey = CacheKeyUtil.websocketKlineKey(symbol, k.getInterval());
+            cacheService.put(redisKey, kline, CacheConfig.KLINE_TTL);
             
         } catch (Exception e) {
             log.error("Error handling Kline: {}", e.getMessage(), e);
@@ -83,8 +84,8 @@ public class BinanceMessageHandler {
             Depth depth = objectMapper.treeToValue(data, Depth.class);
             String symbol = depth.getSymbol();
             
-            String redisKey = "binance:depth:" + symbol.toLowerCase();
-            redisTemplate.opsForValue().set(redisKey, depth, 10, TimeUnit.SECONDS);
+            String redisKey = CacheKeyUtil.depthKey(symbol);
+            cacheService.put(redisKey, depth, CacheConfig.MARKET_DATA_TTL);
             
         } catch (Exception e) {
             log.error("Error handling Depth: {}", e.getMessage(), e);

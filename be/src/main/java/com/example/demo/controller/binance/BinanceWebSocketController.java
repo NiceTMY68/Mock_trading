@@ -8,7 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.example.demo.service.CacheService;
+import com.example.demo.util.CacheKeyUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,7 +26,7 @@ import java.util.UUID;
 public class BinanceWebSocketController {
 
     private final BinanceWebSocketClient webSocketClient;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final CacheService cacheService;
     private final AuditService auditService;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
@@ -52,8 +53,8 @@ public class BinanceWebSocketController {
             JsonNode params = objectMapper.createObjectNode().put("symbol", symbol);
             auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/websocket/price/" + symbol, params);
             
-            String priceKey = "binance:price:" + symbol.toLowerCase();
-            Object price = redisTemplate.opsForValue().get(priceKey);
+            String priceKey = CacheKeyUtil.priceKey(symbol);
+            Object price = cacheService.get(priceKey, Object.class).orElse(null);
             
             long latencyMs = System.currentTimeMillis() - startTime;
             
@@ -89,8 +90,8 @@ public class BinanceWebSocketController {
             JsonNode params = objectMapper.createObjectNode().put("symbol", symbol);
             auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/websocket/trade/" + symbol, params);
             
-            String tradeKey = "binance:trade:" + symbol.toLowerCase();
-            Object trade = redisTemplate.opsForValue().get(tradeKey);
+            String tradeKey = CacheKeyUtil.tradeKey(symbol);
+            Object trade = cacheService.get(tradeKey, Object.class).orElse(null);
             
             long latencyMs = System.currentTimeMillis() - startTime;
             
@@ -129,8 +130,8 @@ public class BinanceWebSocketController {
                     .put("interval", interval);
             auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/websocket/kline/" + symbol + "/" + interval, params);
             
-            String klineKey = "binance:kline:" + symbol.toLowerCase() + ":" + interval;
-            Object kline = redisTemplate.opsForValue().get(klineKey);
+            String klineKey = CacheKeyUtil.websocketKlineKey(symbol, interval);
+            Object kline = cacheService.get(klineKey, Object.class).orElse(null);
             
             long latencyMs = System.currentTimeMillis() - startTime;
             
@@ -165,8 +166,8 @@ public class BinanceWebSocketController {
             JsonNode params = objectMapper.createObjectNode().put("symbol", symbol);
             auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/websocket/depth/" + symbol, params);
             
-            String depthKey = "binance:depth:" + symbol.toLowerCase();
-            Object depth = redisTemplate.opsForValue().get(depthKey);
+            String depthKey = CacheKeyUtil.depthKey(symbol);
+            Object depth = cacheService.get(depthKey, Object.class).orElse(null);
             
             long latencyMs = System.currentTimeMillis() - startTime;
             

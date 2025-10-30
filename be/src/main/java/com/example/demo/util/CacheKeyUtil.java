@@ -37,6 +37,22 @@ public class CacheKeyUtil {
         return key.toString();
     }
     
+    public static String websocketKlineKey(String symbol, String interval) {
+        return BINANCE_PREFIX + SEPARATOR + "kline" + SEPARATOR + symbol.toLowerCase() + SEPARATOR + interval;
+    }
+    
+    public static String priceKey(String symbol) {
+        return BINANCE_PREFIX + SEPARATOR + "price" + SEPARATOR + symbol.toLowerCase();
+    }
+    
+    public static String tradeKey(String symbol) {
+        return BINANCE_PREFIX + SEPARATOR + "trade" + SEPARATOR + symbol.toLowerCase();
+    }
+    
+    public static String depthKey(String symbol) {
+        return BINANCE_PREFIX + SEPARATOR + "depth" + SEPARATOR + symbol.toLowerCase();
+    }
+    
     public static String tickerKey(String symbol) {
         return BINANCE_PREFIX + SEPARATOR + "ticker" + SEPARATOR + symbol.toUpperCase();
     }
