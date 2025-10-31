@@ -21,6 +21,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\conf
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\config\WebConfig.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\controller\AlertController.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\controller\AuthController.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\controller\BacktestController.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\controller\BillingController.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\controller\binance\BinanceMarketController.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\controller\binance\BinanceWebSocketController.java
@@ -30,6 +31,8 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\cont
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\controller\WebhookController.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\DemoApplication.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\AuthResponseDto.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\BacktestRequest.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\BacktestResult.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\CheckoutRequestDto.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\CheckoutResponseDto.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\HoldingResponse.java
@@ -41,6 +44,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\RegisterDto.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\TradeResponse.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\entity\Alert.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\entity\Backtest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\entity\Holding.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\entity\Notification.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\entity\Order.java
@@ -55,6 +59,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\enti
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\exception\BadRequestException.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\filter\JwtAuthenticationFilter.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\repository\AlertRepository.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\repository\BacktestRepository.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\repository\HoldingRepository.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\repository\NotificationRepository.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\repository\OrderRepository.java
@@ -70,8 +75,8 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\sche
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\scheduler\LimitOrderMatcherScheduler.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\security\RateLimitInterceptor.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\AlertService.java
-C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\AuditLogger.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\AuditService.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\BacktestService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\BillingService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\CacheService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\FeatureFlagService.java
@@ -79,6 +84,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\serv
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\OrderService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\PriceService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\WatchlistService.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\util\AuditLoggingHelper.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\util\CacheKeyUtil.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\util\JwtUtil.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\util\ParamNormalizer.java
