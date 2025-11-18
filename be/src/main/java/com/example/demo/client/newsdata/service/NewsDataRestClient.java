@@ -4,6 +4,7 @@ import com.example.demo.client.newsdata.config.NewsDataProperties;
 import com.example.demo.client.newsdata.model.NewsDataResponse;
 import com.example.demo.config.CacheConfig;
 import com.example.demo.service.CacheService;
+import com.example.demo.service.UsageService;
 import com.example.demo.util.CacheKeyUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -24,79 +26,67 @@ public class NewsDataRestClient {
     private final ObjectMapper objectMapper;
     private final CacheService cacheService;
     private final NewsDataProperties properties;
+    private final UsageService usageService;
 
     public NewsDataResponse getCryptoNews(Map<String, String> parameters) {
+        return getCryptoNews(parameters, null);
+    }
+    
+    public NewsDataResponse getCryptoNews(Map<String, String> parameters, UUID userId) {
         Instant from = parseInstant(parameters.get("from_date"));
         Instant to = parseInstant(parameters.get("to_date"));
         Integer page = parameters.containsKey("page") ? Integer.parseInt(parameters.get("page")) : null;
-        
         String cacheKey = CacheKeyUtil.cryptoNewsKey(from, to, page);
         
         return cacheService.get(cacheKey, NewsDataResponse.class)
-                .orElseGet(() -> {
-                    try {
-                        UriComponentsBuilder builder = UriComponentsBuilder
-                                .fromUriString(properties.getBaseUrl() + "/crypto")
-                                .queryParam("apikey", properties.getApiKey());
-                        
-                        if (parameters != null) {
-                            parameters.forEach(builder::queryParam);
-                        }
-                        
-                        String url = builder.toUriString();
-                        String response = restTemplate.getForObject(url, String.class);
-                        
-                        NewsDataResponse newsData = objectMapper.readValue(response, NewsDataResponse.class);
-                        
-                        cacheService.put(cacheKey, newsData, CacheConfig.NEWS_TTL);
-                        log.info("Fetched and cached crypto news: {} articles", 
-                                 newsData != null && newsData.getResults() != null ? newsData.getResults().size() : 0);
-                        
-                        return newsData;
-                        
-                    } catch (Exception e) {
-                        log.error("Error fetching crypto news: {}", e.getMessage(), e);
-                        return null;
-                    }
-                });
+                .orElseGet(() -> fetchAndCache("crypto", cacheKey, parameters, userId));
     }
 
     public NewsDataResponse getNews(String endpoint, Map<String, String> parameters) {
+        return getNews(endpoint, parameters, null);
+    }
+    
+    public NewsDataResponse getNews(String endpoint, Map<String, String> parameters, UUID userId) {
         String query = parameters != null ? parameters.get("q") : null;
         Instant from = parseInstant(parameters != null ? parameters.get("from_date") : null);
         Instant to = parseInstant(parameters != null ? parameters.get("to_date") : null);
         Integer page = parameters != null && parameters.containsKey("page") ? 
                        Integer.parseInt(parameters.get("page")) : null;
-        
         String cacheKey = CacheKeyUtil.newsKey(query, from, to, page);
         
         return cacheService.get(cacheKey, NewsDataResponse.class)
-                .orElseGet(() -> {
-                    try {
-                        UriComponentsBuilder builder = UriComponentsBuilder
-                                .fromUriString(properties.getBaseUrl() + "/" + endpoint)
-                                .queryParam("apikey", properties.getApiKey());
-                        
-                        if (parameters != null) {
-                            parameters.forEach(builder::queryParam);
-                        }
-                        
-                        String url = builder.toUriString();
-                        String response = restTemplate.getForObject(url, String.class);
-                        
-                        NewsDataResponse newsData = objectMapper.readValue(response, NewsDataResponse.class);
-                        
-                        cacheService.put(cacheKey, newsData, CacheConfig.NEWS_TTL);
-                        log.info("Fetched and cached news from {}: {} articles", endpoint,
-                                 newsData != null && newsData.getResults() != null ? newsData.getResults().size() : 0);
-                        
-                        return newsData;
-                        
-                    } catch (Exception e) {
-                        log.error("Error fetching news from {}: {}", endpoint, e.getMessage(), e);
-                        return null;
-                    }
-                });
+                .orElseGet(() -> fetchAndCache(endpoint, cacheKey, parameters, userId));
+    }
+    
+    private NewsDataResponse fetchAndCache(String endpoint, String cacheKey, 
+                                           Map<String, String> parameters, UUID userId) {
+        try {
+            UriComponentsBuilder builder = UriComponentsBuilder
+                    .fromUriString(properties.getBaseUrl() + "/" + endpoint)
+                    .queryParam("apikey", properties.getApiKey());
+            
+            if (parameters != null) {
+                parameters.forEach(builder::queryParam);
+            }
+            
+            String response = restTemplate.getForObject(builder.toUriString(), String.class);
+            NewsDataResponse newsData = objectMapper.readValue(response, NewsDataResponse.class);
+            
+            cacheService.put(cacheKey, newsData, CacheConfig.NEWS_TTL);
+            
+            int articleCount = newsData != null && newsData.getResults() != null ? 
+                newsData.getResults().size() : 0;
+            
+            usageService.increment(UsageService.NEWS_API_CALLS, userId, 1, endpoint);
+            usageService.increment(UsageService.NEWS_API_ARTICLES, userId, articleCount, endpoint);
+            
+            log.info("Fetched and cached {} news: {} articles", endpoint, articleCount);
+            return newsData;
+            
+        } catch (Exception e) {
+            log.error("Error fetching news from {}: {}", endpoint, e.getMessage(), e);
+            return null;
+        }
     }
     
     private Instant parseInstant(String dateStr) {
