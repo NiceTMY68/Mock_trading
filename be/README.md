@@ -1,5 +1,9 @@
 # Mock Trading Backend
 
+![CI](https://github.com/YOUR_USERNAME/YOUR_REPO/workflows/CI/badge.svg)
+[![Java](https://img.shields.io/badge/Java-17-blue.svg)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-green.svg)](https://spring.io/projects/spring-boot)
+
 A Spring Boot application for cryptocurrency mock trading with real-time market data from Binance.
 
 ## Prerequisites
