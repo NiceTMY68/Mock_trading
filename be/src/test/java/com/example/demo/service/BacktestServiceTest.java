@@ -45,6 +45,8 @@ class BacktestServiceTest {
     @BeforeEach
     void setUp() {
         testSnapshots = createTestSnapshots();
+        org.springframework.test.util.ReflectionTestUtils.setField(backtestService, "maxDataPoints", 10000);
+        org.springframework.test.util.ReflectionTestUtils.setField(backtestService, "maxRangeDays", 365);
     }
     
     @Test

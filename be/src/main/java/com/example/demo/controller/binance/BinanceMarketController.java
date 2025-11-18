@@ -14,6 +14,10 @@ import com.example.demo.util.AuditLoggingHelper;
 import com.example.demo.util.ParamValidator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,6 +35,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/binance/market")
 @RequiredArgsConstructor
+@Tag(name = "Binance Market Data", description = "Proxy endpoints for Binance market data (symbols, tickers, klines)")
 public class BinanceMarketController {
 
     private final BinanceRestClient binanceRestClient;
@@ -68,6 +73,13 @@ public class BinanceMarketController {
         return null;
     }
 
+    @Operation(
+        summary = "Get top 3 cryptocurrencies",
+        description = "Retrieve the top 3 cryptocurrencies by market cap from Binance. Response includes requestId and is cached.",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved top 3 coins")
+        }
+    )
     @GetMapping("/top-3")
     public ResponseEntity<?> getTop3Coins() {
         var ctx = auditLoggingHelper.start("/api/v1/binance/market/top-3", getCurrentUserId(), objectMapper.createObjectNode());
@@ -90,10 +102,17 @@ public class BinanceMarketController {
         }
     }
 
+    @Operation(
+        summary = "Get top cryptocurrencies",
+        description = "Retrieve top N cryptocurrencies sorted by market cap or volume",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved top coins")
+        }
+    )
     @GetMapping("/top")
     public ResponseEntity<?> getTopCoins(
-            @RequestParam int limit,
-            @RequestParam String sortBy) {
+            @Parameter(description = "Number of coins to return", example = "10") @RequestParam int limit,
+            @Parameter(description = "Sort criteria (marketCap or volume)", example = "marketCap") @RequestParam String sortBy) {
         var ctx = auditLoggingHelper.start("/api/v1/binance/market/top", getCurrentUserId(), objectMapper.createObjectNode().put("limit", limit).put("sortBy", sortBy));
         try {
             List<BinanceTicker24hr> topCoins;

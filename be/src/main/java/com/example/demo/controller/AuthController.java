@@ -6,6 +6,11 @@ import com.example.demo.dto.RegisterDto;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.util.JwtUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +23,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Authentication", description = "User authentication and registration endpoints")
 public class AuthController {
 
     @Autowired
@@ -29,6 +35,15 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Operation(
+        summary = "Register new user",
+        description = "Create a new user account and return JWT authentication token",
+        responses = {
+            @ApiResponse(responseCode = "201", description = "User registered successfully",
+                content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Email already exists")
+        }
+    )
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterDto registerDto) {
         try {
@@ -69,6 +84,16 @@ public class AuthController {
         }
     }
 
+    @Operation(
+        summary = "User login",
+        description = "Authenticate user with email and password, returns JWT token",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Login successful",
+                content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials"),
+            @ApiResponse(responseCode = "403", description = "Account disabled")
+        }
+    )
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginDto loginDto) {
         try {
@@ -109,6 +134,14 @@ public class AuthController {
         }
     }
 
+    @Operation(
+        summary = "Get current user profile",
+        description = "Retrieve authenticated user's profile information",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "User profile retrieved"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+        }
+    )
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
         try {

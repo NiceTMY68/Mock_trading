@@ -6,6 +6,12 @@ import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.OrderService;
 import com.example.demo.service.FeatureFlagService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,12 +27,24 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
+@Tag(name = "Mock Trading", description = "Place and manage mock trading orders (market and limit)")
+@SecurityRequirement(name = "bearerAuth")
 public class OrderController {
     
     private final OrderService orderService;
     private final UserRepository userRepository;
     private final FeatureFlagService featureFlagService;
     
+    @Operation(
+        summary = "Place order",
+        description = "Place a new market or limit order. Requires premium subscription.",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Order placed successfully",
+                content = @Content(schema = @Schema(implementation = OrderResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Trading requires premium subscription"),
+            @ApiResponse(responseCode = "401", description = "User not authenticated")
+        }
+    )
     @PostMapping
     public ResponseEntity<?> placeOrder(@Valid @RequestBody PlaceOrderDto dto, Authentication authentication) {
         try {
