@@ -7,6 +7,7 @@ com\example\demo\service\AlertService.class
 com\example\demo\client\binance\service\BinanceRestClient$1.class
 com\example\demo\config\RateLimiterConfig$RateLimitRule$Builder.class
 com\example\demo\client\binance\config\BinanceProperties.class
+com\example\demo\repository\UsageMetricRepository.class
 com\example\demo\client\newsdata\model\NewsDataResponse.class
 com\example\demo\client\binance\service\BinanceMessageHandler.class
 com\example\demo\entity\Holding$HoldingBuilder.class
@@ -82,8 +83,10 @@ com\example\demo\repository\WatchlistRepository.class
 com\example\demo\entity\User$UserBuilder.class
 com\example\demo\config\RateLimiterConfig.class
 com\example\demo\repository\BacktestRepository.class
+com\example\demo\entity\UsageMetric.class
 com\example\demo\service\CacheService.class
 com\example\demo\dto\CheckoutResponseDto.class
+com\example\demo\entity\UsageMetric$UsageMetricBuilder.class
 com\example\demo\repository\NotificationRepository.class
 com\example\demo\util\ParamValidator.class
 com\example\demo\config\WebConfig.class
@@ -94,6 +97,7 @@ com\example\demo\entity\Notification$Type.class
 com\example\demo\controller\WatchlistController.class
 com\example\demo\entity\WatchlistItem.class
 com\example\demo\entity\PriceSnapshot.class
+com\example\demo\service\UsageService.class
 com\example\demo\dto\PortfolioResponse$PortfolioResponseBuilder.class
 com\example\demo\repository\OrderRepository.class
 com\example\demo\util\AuditLoggingHelper$AuditContext.class
