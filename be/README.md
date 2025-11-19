@@ -56,6 +56,9 @@ Configure required variables:
 | `JWT_SECRET` | 256-bit secret for JWT signing | Yes |
 | `NEWS_API_KEY` | NewsData.io API key | Optional |
 | `STRIPE_SECRET_KEY` | Stripe secret key | Optional |
+| `BINANCE_WS_URL` | Optional override for Binance streams | Optional |
+| `security.allowed-origins` | Comma-separated list for CORS | Optional |
+| `security.require-ssl` | Force HTTPS redirect (`true`/`false`) | Optional |
 
 ### 2. Start Infrastructure
 
@@ -194,6 +197,12 @@ When running with `dev` profile, the following test accounts are created:
 **Limits:**
 - Free tier: 5 symbols max
 - Pro tier: 25 symbols max
+
+**Auth sanity check:**
+```bash
+curl -i http://localhost:8080/api/v1/market/symbols
+# Should return 401 Unauthorized without a JWT
+```
 
 ### Trading
 
@@ -377,6 +386,16 @@ Ensure ports are available:
 1. Check Flyway schema history: `./mvnw flyway:info`
 2. Review migration SQL syntax
 3. Verify database user has CREATE privileges
+
+## Security
+
+- Restrict CORS origins via `security.allowed-origins` and enforce HTTPS with `security.require-ssl=true`.
+- Keep secrets (JWT, Stripe, NewsData keys) in a secret manager; never log headers containing credentials.
+- Sanity check protected endpoints:
+  ```bash
+  curl -i http://localhost:8080/api/v1/market/symbols
+  # Expect 401 Unauthorized without JWT
+  ```
 
 ## API Keys
 
