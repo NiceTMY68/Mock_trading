@@ -13,11 +13,9 @@ com\example\demo\client\binance\service\BinanceMessageHandler.class
 com\example\demo\entity\Holding$HoldingBuilder.class
 com\example\demo\dto\KlineParams$KlineParamsBuilder.class
 com\example\demo\entity\WatchlistItem$WatchlistItemBuilder.class
-com\example\demo\controller\AuthController.class
 com\example\demo\repository\HoldingRepository.class
 com\example\demo\client\newsdata\config\NewsDataProperties.class
 com\example\demo\entity\Portfolio.class
-com\example\demo\util\JwtUtil.class
 com\example\demo\controller\binance\BinanceWebSocketController.class
 com\example\demo\config\RateLimiterConfig$RateLimitRule.class
 com\example\demo\client\binance\service\BinanceRestClient$4.class

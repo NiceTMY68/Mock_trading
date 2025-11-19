@@ -5,6 +5,7 @@ import com.example.demo.repository.PriceSnapshotRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.List;
 public class PriceService {
     
     private final PriceSnapshotRepository priceSnapshotRepository;
+    private final ObjectProvider<PriceWebSocketService> priceWebSocketServiceProvider;
     
     @Transactional
     public void persistKlineData(String symbol, List<Object[]> klineData, JsonNode rawMeta) {
@@ -43,6 +45,7 @@ public class PriceService {
         if (!snapshots.isEmpty()) {
             priceSnapshotRepository.saveAll(snapshots);
             log.info("Persisted {} price snapshots for symbol: {}", snapshots.size(), symbol);
+            priceWebSocketServiceProvider.ifAvailable(service -> service.publishSnapshots(symbol, snapshots));
         }
     }
     
@@ -59,6 +62,7 @@ public class PriceService {
             
             priceSnapshotRepository.save(snapshot);
             log.debug("Persisted ticker snapshot for symbol: {} at price: {}", symbol, price);
+            priceWebSocketServiceProvider.ifAvailable(service -> service.publishSnapshot(snapshot));
             
         } catch (Exception e) {
             log.error("Failed to persist ticker data for symbol {}: {}", symbol, e.getMessage());

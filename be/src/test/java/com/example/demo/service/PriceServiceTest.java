@@ -4,6 +4,7 @@ import com.example.demo.entity.PriceSnapshot;
 import com.example.demo.repository.PriceSnapshotRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.ObjectProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,9 @@ class PriceServiceTest {
     @Mock
     private ObjectMapper objectMapper;
     
+    @Mock
+    private ObjectProvider<PriceWebSocketService> priceWebSocketServiceProvider;
+    
     @InjectMocks
     private PriceService priceService;
     
@@ -37,6 +41,7 @@ class PriceServiceTest {
     @BeforeEach
     void setUp() {
         realObjectMapper = new ObjectMapper();
+        lenient().doAnswer(invocation -> null).when(priceWebSocketServiceProvider).ifAvailable(any());
     }
     
     @Test
