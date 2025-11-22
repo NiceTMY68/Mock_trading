@@ -2,6 +2,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\conf
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\config\TestSecurityConfig.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\controller\AuthControllerTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\DemoApplicationTests.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\AlertSchedulerIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\AuditServiceIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\AuthIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\BinanceKlinesCacheIntegrationTest.java

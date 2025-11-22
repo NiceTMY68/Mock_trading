@@ -1,18 +1,15 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.CreateAlertDto;
 import com.example.demo.entity.Alert;
 import com.example.demo.service.AlertService;
 import com.example.demo.util.ControllerHelper;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,9 +31,9 @@ public class AlertController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody CreateAlertRequest req, Authentication authentication) {
+    public ResponseEntity<?> create(@RequestBody CreateAlertDto dto, Authentication authentication) {
         UUID userId = getCurrentUserId();
-        Alert alert = alertService.createAlert(userId, req.getSymbol(), req.getDirection(), req.getThreshold());
+        Alert alert = alertService.createAlert(userId, dto.getSymbol(), dto.getDirection(), dto.getThreshold());
         return ResponseEntity.ok(alert);
     }
 
@@ -49,15 +46,5 @@ public class AlertController {
 
     private UUID getCurrentUserId() {
         return controllerHelper.getCurrentUserId();
-    }
-
-    @Data
-    public static class CreateAlertRequest {
-        @NotBlank
-        private String symbol;
-        @NotNull
-        private Alert.Direction direction;
-        @NotNull
-        private BigDecimal threshold;
     }
 }

@@ -88,7 +88,6 @@ com\example\demo\entity\Subscription$SubscriptionStatus.class
 com\example\demo\client\binance\model\BinanceSymbolInfo$Filter.class
 com\example\demo\controller\BillingController.class
 com\example\demo\controller\BacktestController.class
-com\example\demo\controller\AlertController$CreateAlertRequest.class
 com\example\demo\service\NotificationService.class
 com\example\demo\client\binance\service\BinanceRestClient$2.class
 com\example\demo\dto\KlineParams.class
