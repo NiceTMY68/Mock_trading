@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,7 +55,7 @@ class AlertServiceTest {
                 .build();
 
         when(alertRepository.findByActiveTrue()).thenReturn(List.of(alert));
-        when(priceService.getLatestPrice("BTCUSDT")).thenReturn(new BigDecimal("50500"));
+        when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(new BigDecimal("50500")));
         when(alertRepository.save(any(Alert.class))).thenAnswer(inv -> inv.getArgument(0));
         when(notificationService.createAlertNotification(any(UUID.class), any(), any())).thenReturn(
                 Notification.builder().id(10L).userId(userId).title("t").message("m").createdAt(Instant.now()).read(false).type(Notification.Type.ALERT_TRIGGERED).build()

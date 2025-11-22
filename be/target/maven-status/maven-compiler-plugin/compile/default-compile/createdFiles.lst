@@ -3,7 +3,6 @@ com\example\demo\dto\PlaceOrderDto$PlaceOrderDtoBuilder.class
 com\example\demo\repository\PriceSnapshotRepository.class
 com\example\demo\repository\RequestLogRepository.class
 com\example\demo\repository\WatchlistItemRepository.class
-com\example\demo\service\AlertService.class
 com\example\demo\client\binance\service\BinanceRestClient$1.class
 com\example\demo\config\RateLimiterConfig$RateLimitRule$Builder.class
 com\example\demo\client\binance\config\BinanceProperties.class
@@ -38,7 +37,6 @@ com\example\demo\entity\Notification$NotificationBuilder.class
 com\example\demo\dto\LoginDto.class
 com\example\demo\client\binance\model\BinanceMessage.class
 com\example\demo\entity\Watchlist$WatchlistBuilder.class
-com\example\demo\controller\OrderController.class
 com\example\demo\entity\Order$OrderStatus.class
 com\example\demo\entity\Holding.class
 com\example\demo\dto\ApiResponseDto.class
@@ -57,7 +55,6 @@ com\example\demo\entity\PriceSnapshot$PriceSnapshotBuilder.class
 com\example\demo\repository\UserRepository.class
 com\example\demo\client\binance\service\BinanceRestClient$6.class
 com\example\demo\entity\Subscription.class
-com\example\demo\scheduler\LimitOrderMatcherScheduler.class
 com\example\demo\service\BacktestService$PriceData.class
 com\example\demo\dto\HoldingResponse$HoldingResponseBuilder.class
 com\example\demo\dto\LoginDto$LoginDtoBuilder.class
@@ -133,7 +130,6 @@ com\example\demo\entity\Subscription$SubscriptionStatus.class
 com\example\demo\client\binance\model\BinanceSymbolInfo$Filter.class
 com\example\demo\controller\BillingController.class
 com\example\demo\controller\BacktestController.class
-com\example\demo\scheduler\AlertCheckerScheduler.class
 com\example\demo\controller\AlertController$CreateAlertRequest.class
 com\example\demo\entity\Order$OrderBuilder.class
 com\example\demo\service\NotificationService.class

@@ -52,7 +52,7 @@ public class AlertService {
         List<Alert> alerts = alertRepository.findByActiveTrue();
         for (Alert alert : alerts) {
             try {
-                BigDecimal price = priceService.getLatestPrice(alert.getSymbol());
+                BigDecimal price = priceService.getLatestPrice(alert.getSymbol()).orElse(null);
                 if (price == null) continue;
                 boolean trigger =
                         (alert.getDirection() == Alert.Direction.ABOVE && price.compareTo(alert.getThreshold()) >= 0) ||

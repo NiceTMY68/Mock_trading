@@ -3,14 +3,20 @@ package com.example.demo.client.binance.service;
 import com.example.demo.client.binance.model.AggTrade;
 import com.example.demo.client.binance.model.Depth;
 import com.example.demo.client.binance.model.Kline;
+import com.example.demo.dto.KlinePointDto;
+import com.example.demo.service.CacheService;
+import com.example.demo.service.PriceService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.example.demo.service.CacheService;
 import com.example.demo.config.CacheConfig;
 import com.example.demo.util.CacheKeyUtil;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 
 
 @Slf4j
@@ -20,6 +26,7 @@ public class BinanceMessageHandler {
 
     private final ObjectMapper objectMapper;
     private final CacheService cacheService;
+    private final PriceService priceService;
 
     public void handleMessage(String message) {
         try {
@@ -73,6 +80,22 @@ public class BinanceMessageHandler {
             
             String redisKey = CacheKeyUtil.websocketKlineKey(symbol, k.getInterval());
             cacheService.put(redisKey, kline, CacheConfig.KLINE_TTL);
+            
+            // Persist price snapshot if kline is closed
+            if (k.getIsClosed() != null && k.getIsClosed()) {
+                KlinePointDto point = KlinePointDto.builder()
+                        .timestamp(Instant.ofEpochMilli(k.getStartTime()))
+                        .open(k.getOpenPrice())
+                        .high(k.getHighPrice())
+                        .low(k.getLowPrice())
+                        .close(k.getClosePrice())
+                        .volume(k.getVolume())
+                        .interval(k.getInterval())
+                        .build();
+                
+                priceService.saveSnapshots(List.of(point), symbol);
+                log.debug("Persisted websocket kline snapshot for symbol: {} interval: {}", symbol, k.getInterval());
+            }
             
         } catch (Exception e) {
             log.error("Error handling Kline: {}", e.getMessage(), e);

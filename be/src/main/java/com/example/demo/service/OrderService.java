@@ -112,7 +112,7 @@ public class OrderService {
     private BigDecimal getLatestPrice(String symbol) {
         try {
             // Get latest price from PriceService
-            return priceService.getLatestPrice(symbol);
+            return priceService.getLatestPrice(symbol).orElse(null);
         } catch (Exception e) {
             log.error("Error getting latest price for symbol {}: {}", symbol, e.getMessage());
             return null;

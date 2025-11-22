@@ -2,10 +2,12 @@ package com.example.demo.client.binance.service;
 
 import com.example.demo.config.CacheConfig;
 import com.example.demo.dto.KlineParams;
+import com.example.demo.dto.KlinePointDto;
 import com.example.demo.dto.KlinesResponseDto;
 import com.example.demo.dto.TickerResponseDto;
 import com.example.demo.service.AuditService;
 import com.example.demo.service.CacheService;
+import com.example.demo.service.PriceService;
 import com.example.demo.util.CacheKeyUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +32,7 @@ public class BinanceProxyService {
     private final AuditService auditService;
     private final CacheConfig cacheConfig;
     private final ObjectMapper objectMapper;
+    private final PriceService priceService;
     
     public KlinesResponseDto getKlines(UUID requestId, UUID userId, KlineParams params) {
         long startTime = System.currentTimeMillis();
@@ -64,6 +70,12 @@ public class BinanceProxyService {
                         params.getLimit()
                 );
             }, cacheConfig.getKlinesTtl(), new com.fasterxml.jackson.core.type.TypeReference<List<Object[]>>() {});
+            
+            // Convert to KlinePointDto and persist
+            if (klineData != null && !klineData.isEmpty()) {
+                List<KlinePointDto> points = convertToKlinePoints(klineData, params.getInterval());
+                priceService.saveSnapshots(points, params.getSymbol());
+            }
             
             // Build provider metadata
             providerMeta = JsonNodeFactory.instance.objectNode()
@@ -163,6 +175,38 @@ public class BinanceProxyService {
             
             throw new RuntimeException("Failed to fetch ticker: " + e.getMessage(), e);
         }
+    }
+    
+    private List<KlinePointDto> convertToKlinePoints(List<Object[]> klineData, String interval) {
+        List<KlinePointDto> points = new ArrayList<>();
+        
+        for (Object[] kline : klineData) {
+            try {
+                // Binance kline format: [openTime, open, high, low, close, volume, closeTime, ...]
+                long openTime = Long.parseLong(kline[0].toString());
+                BigDecimal open = new BigDecimal(kline[1].toString());
+                BigDecimal high = new BigDecimal(kline[2].toString());
+                BigDecimal low = new BigDecimal(kline[3].toString());
+                BigDecimal close = new BigDecimal(kline[4].toString());
+                BigDecimal volume = new BigDecimal(kline[5].toString());
+                
+                KlinePointDto point = KlinePointDto.builder()
+                        .timestamp(Instant.ofEpochMilli(openTime))
+                        .open(open)
+                        .high(high)
+                        .low(low)
+                        .close(close)
+                        .volume(volume)
+                        .interval(interval)
+                        .build();
+                
+                points.add(point);
+            } catch (Exception e) {
+                log.warn("Failed to convert kline to KlinePointDto: {}", e.getMessage());
+            }
+        }
+        
+        return points;
     }
 }
 
