@@ -168,7 +168,6 @@ public class BillingService {
             String subscriptionId = stripeSubscription.getId();
             String status = stripeSubscription.getStatus();
             
-            // Find user by customer ID
             Optional<Subscription> existingSub = subscriptionRepository.findByStripeCustomerId(customerId);
             if (existingSub.isEmpty()) {
                 log.warn("No user found for Stripe customer: {}", customerId);
@@ -177,7 +176,6 @@ public class BillingService {
             
             UUID userId = existingSub.get().getUserId();
             
-            // Create subscription record
             Subscription subscription = Subscription.builder()
                     .userId(userId)
                     .stripeCustomerId(customerId)
@@ -209,7 +207,6 @@ public class BillingService {
             String subscriptionId = stripeSubscription.getId();
             String status = stripeSubscription.getStatus();
             
-            // Find and update subscription
             Optional<Subscription> subscription = subscriptionRepository.findByStripeSubscriptionId(subscriptionId);
             if (subscription.isPresent()) {
                 Subscription sub = subscription.get();
@@ -238,7 +235,6 @@ public class BillingService {
             
             String subscriptionId = stripeSubscription.getId();
             
-            // Find and cancel subscription
             Optional<Subscription> subscription = subscriptionRepository.findByStripeSubscriptionId(subscriptionId);
             if (subscription.isPresent()) {
                 Subscription sub = subscription.get();

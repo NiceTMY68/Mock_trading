@@ -2,6 +2,8 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.CheckoutRequestDto;
 import com.example.demo.dto.CheckoutResponseDto;
+import com.example.demo.entity.User;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.BillingService;
 import com.example.demo.service.FeatureFlagService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class BillingController {
     
     private final BillingService billingService;
     private final FeatureFlagService featureFlagService;
+    private final UserRepository userRepository;
     
     @PostMapping("/create-checkout")
     public ResponseEntity<CheckoutResponseDto> createCheckoutSession(
@@ -142,7 +145,9 @@ public class BillingController {
     }
     
     private UUID getUserIdFromEmail(String email) {
-        return UUID.randomUUID();
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElse(null);
     }
     
     private boolean isValidPlan(String planId) {
