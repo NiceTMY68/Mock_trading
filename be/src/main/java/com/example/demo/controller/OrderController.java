@@ -54,7 +54,7 @@ public class OrderController {
                         .body(Map.of("error", "User not authenticated"));
             }
             
-            if (!featureFlagService.isFeatureEnabled(userId, FeatureFlagService.REAL_TIME_ALERTS)) {
+            if (!featureFlagService.isFeatureEnabled(userId, FeatureFlagService.TRADING)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of(
                                 "error", "Trading requires premium subscription",
@@ -185,7 +185,7 @@ public class OrderController {
                         .body(Map.of("error", "User not authenticated"));
             }
             
-            if (!featureFlagService.isFeatureEnabled(userId, FeatureFlagService.REAL_TIME_ALERTS)) {
+            if (!featureFlagService.isFeatureEnabled(userId, FeatureFlagService.TRADING)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of(
                                 "error", "Trading requires premium subscription",

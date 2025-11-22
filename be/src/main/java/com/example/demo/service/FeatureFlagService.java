@@ -26,6 +26,7 @@ public class FeatureFlagService {
     public static final String HISTORICAL_DATA = "historical_data";
     public static final String REAL_TIME_ALERTS = "real_time_alerts";
     public static final String PORTFOLIO_ANALYTICS = "portfolio_analytics";
+    public static final String TRADING = "trading";
     
     public boolean isFeatureEnabled(UUID userId, String featureKey) {
         if (userId == null) {
@@ -126,6 +127,7 @@ public class FeatureFlagService {
                ADVANCED_CHARTS.equals(featureKey) ||
                HISTORICAL_DATA.equals(featureKey) ||
                REAL_TIME_ALERTS.equals(featureKey) ||
-               PORTFOLIO_ANALYTICS.equals(featureKey);
+               PORTFOLIO_ANALYTICS.equals(featureKey) ||
+               TRADING.equals(featureKey);
     }
 }

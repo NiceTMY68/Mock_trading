@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.BacktestRequest;
 import com.example.demo.dto.BacktestResult;
 import com.example.demo.service.BacktestService;
+import com.example.demo.service.FeatureFlagService;
 import com.example.demo.util.AuditLoggingHelper;
 import com.example.demo.util.ControllerHelper;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +34,7 @@ public class BacktestController {
     private final ObjectMapper objectMapper;
     private final AuditLoggingHelper auditLoggingHelper;
     private final ControllerHelper controllerHelper;
+    private final FeatureFlagService featureFlagService;
     
     private UUID getCurrentUserId() {
         return controllerHelper.getCurrentUserId();
@@ -62,6 +65,10 @@ public class BacktestController {
             objectMapper.valueToTree(request));
         try {
             UUID userId = getCurrentUserId();
+            if (userId != null && !featureFlagService.isFeatureEnabled(userId, FeatureFlagService.BACKTESTING)) {
+                return auditLoggingHelper.error(ctx, "Backtesting requires premium subscription", 
+                    HttpStatus.FORBIDDEN, "backtest");
+            }
             BacktestResult result = backtestService.runBacktest(request, userId);
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("symbol", result.getSymbol())
@@ -70,7 +77,7 @@ public class BacktestController {
             return auditLoggingHelper.ok(ctx, result, "backtest", false, providerMeta);
         } catch (Exception e) {
             log.error("Error running backtest: {}", e.getMessage(), e);
-            return auditLoggingHelper.error(ctx, e.getMessage(), org.springframework.http.HttpStatus.BAD_REQUEST, "backtest");
+            return auditLoggingHelper.error(ctx, e.getMessage(), HttpStatus.BAD_REQUEST, "backtest");
         }
     }
 }

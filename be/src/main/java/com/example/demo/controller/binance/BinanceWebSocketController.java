@@ -3,6 +3,7 @@ package com.example.demo.controller.binance;
 import com.example.demo.client.binance.service.BinanceWebSocketClient;
 import com.example.demo.service.AuditService;
 import com.example.demo.service.CacheService;
+import com.example.demo.service.FeatureFlagService;
 import com.example.demo.util.CacheKeyUtil;
 import com.example.demo.util.ControllerHelper;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,6 +28,7 @@ public class BinanceWebSocketController {
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
     private final ControllerHelper controllerHelper;
+    private final FeatureFlagService featureFlagService;
 
     private UUID getCurrentUserId() {
         return controllerHelper.getCurrentUserId();
@@ -189,10 +191,19 @@ public class BinanceWebSocketController {
         long startTime = System.currentTimeMillis();
         
         try {
+            UUID userId = getCurrentUserId();
+            if (userId != null && !featureFlagService.isFeatureEnabled(userId, FeatureFlagService.STREAMING_DATA)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                                "error", "Streaming data requires premium subscription",
+                                "requestId", requestId.toString()
+                        ));
+            }
+            
             JsonNode params = objectMapper.createObjectNode()
                     .put("symbol", symbol)
                     .put("streamType", streamType);
-            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/websocket/subscribe", params);
+            auditService.logRequest(requestId, userId, "/api/v1/binance/websocket/subscribe", params);
             
             webSocketClient.subscribeToSymbol(symbol, streamType);
             
