@@ -90,9 +90,11 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\serv
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\BillingService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\CacheService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\FeatureFlagService.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\HoldingService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\impl\AuditServiceImpl.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\NotificationService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\OrderService.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\PortfolioService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\PriceService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\PriceWebSocketService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\UsageService.java

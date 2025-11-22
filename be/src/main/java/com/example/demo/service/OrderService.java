@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -23,9 +22,11 @@ public class OrderService {
     
     private final OrderRepository orderRepository;
     private final TradeRepository tradeRepository;
-    private final HoldingRepository holdingRepository;
-    private final PortfolioRepository portfolioRepository;
+    private final HoldingService holdingService;
+    private final PortfolioService portfolioService;
     private final PriceService priceService;
+    private final PortfolioRepository portfolioRepository;
+    private final HoldingRepository holdingRepository;
     
     private static final BigDecimal COMMISSION_RATE = new BigDecimal("0.001"); // 0.1% commission
     
@@ -161,125 +162,6 @@ public class OrderService {
                 .build();
     }
     
-    @Transactional
-    public void updateHoldingsAndPortfolio(UUID userId, String symbol, Order.OrderSide side, 
-                                         BigDecimal quantity, BigDecimal price, BigDecimal commission) {
-        
-        // Update or create holding
-        Optional<Holding> existingHolding = holdingRepository.findByUserIdAndSymbol(userId, symbol);
-        Holding holding;
-        
-        if (existingHolding.isPresent()) {
-            holding = existingHolding.get();
-            updateExistingHolding(holding, side, quantity, price, commission);
-        } else {
-            holding = createNewHolding(userId, symbol, side, quantity, price, commission);
-        }
-        
-        holdingRepository.save(holding);
-        
-        // Update portfolio
-        updatePortfolio(userId, side, quantity.multiply(price).add(commission));
-    }
-    
-    private void updateExistingHolding(Holding holding, Order.OrderSide side, BigDecimal quantity, 
-                                     BigDecimal price, BigDecimal commission) {
-        if (side == Order.OrderSide.BUY) {
-            BigDecimal newQuantity = holding.getQuantity().add(quantity);
-            BigDecimal newTotalCost = holding.getTotalCost().add(quantity.multiply(price)).add(commission);
-            BigDecimal newAverageCost = newTotalCost.divide(newQuantity, 8, RoundingMode.HALF_UP);
-            
-            holding.setQuantity(newQuantity);
-            holding.setTotalCost(newTotalCost);
-            holding.setAverageCost(newAverageCost);
-        } else {
-            BigDecimal newQuantity = holding.getQuantity().subtract(quantity);
-            if (newQuantity.compareTo(BigDecimal.ZERO) < 0) {
-                throw new RuntimeException("Insufficient holdings");
-            }
-            
-            BigDecimal costReduction = holding.getTotalCost().multiply(quantity).divide(holding.getQuantity(), 8, RoundingMode.HALF_UP);
-            BigDecimal newTotalCost = holding.getTotalCost().subtract(costReduction);
-            BigDecimal newAverageCost = newQuantity.compareTo(BigDecimal.ZERO) > 0 ? 
-                    newTotalCost.divide(newQuantity, 8, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-            
-            holding.setQuantity(newQuantity);
-            holding.setTotalCost(newTotalCost);
-            holding.setAverageCost(newAverageCost);
-        }
-        
-        holding.setMarketValue(holding.getQuantity().multiply(price));
-        holding.setUnrealizedPnl(holding.getMarketValue().subtract(holding.getTotalCost()));
-    }
-    
-    private Holding createNewHolding(UUID userId, String symbol, Order.OrderSide side, 
-                                   BigDecimal quantity, BigDecimal price, BigDecimal commission) {
-        if (side == Order.OrderSide.SELL) {
-            throw new RuntimeException("Cannot create new holding for sell order");
-        }
-        
-        BigDecimal totalCost = quantity.multiply(price).add(commission);
-        BigDecimal averageCost = totalCost.divide(quantity, 8, RoundingMode.HALF_UP);
-        
-        return Holding.builder()
-                .userId(userId)
-                .symbol(symbol)
-                .quantity(quantity)
-                .averageCost(averageCost)
-                .totalCost(totalCost)
-                .marketValue(quantity.multiply(price))
-                .unrealizedPnl(quantity.multiply(price).subtract(totalCost))
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .build();
-    }
-    
-    private void updatePortfolio(UUID userId, Order.OrderSide side, BigDecimal amount) {
-        Portfolio portfolio = portfolioRepository.findByUserId(userId)
-                .orElseGet(() -> Portfolio.builder()
-                        .userId(userId)
-                        .virtualBalance(BigDecimal.valueOf(10000))
-                        .totalInvested(BigDecimal.ZERO)
-                        .totalMarketValue(BigDecimal.ZERO)
-                        .totalPnl(BigDecimal.ZERO)
-                        .totalPnlPercentage(BigDecimal.ZERO)
-                        .createdAt(Instant.now())
-                        .updatedAt(Instant.now())
-                        .build());
-        
-        if (side == Order.OrderSide.BUY) {
-            portfolio.setVirtualBalance(portfolio.getVirtualBalance().subtract(amount));
-            portfolio.setTotalInvested(portfolio.getTotalInvested().add(amount));
-        } else {
-            portfolio.setVirtualBalance(portfolio.getVirtualBalance().add(amount));
-            portfolio.setTotalInvested(portfolio.getTotalInvested().subtract(amount));
-        }
-        
-        // Update total market value and PnL
-        updatePortfolioValues(portfolio, userId);
-        
-        portfolioRepository.save(portfolio);
-    }
-    
-    private void updatePortfolioValues(Portfolio portfolio, UUID userId) {
-        BigDecimal totalMarketValue = holdingRepository.getTotalMarketValueByUserId(userId);
-        if (totalMarketValue == null) {
-            totalMarketValue = BigDecimal.ZERO;
-        }
-        
-        portfolio.setTotalMarketValue(totalMarketValue);
-        
-        BigDecimal totalPnl = totalMarketValue.add(portfolio.getVirtualBalance()).subtract(BigDecimal.valueOf(10000));
-        portfolio.setTotalPnl(totalPnl);
-        
-        if (portfolio.getTotalInvested().compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal pnlPercentage = totalPnl.divide(portfolio.getTotalInvested(), 4, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100));
-            portfolio.setTotalPnlPercentage(pnlPercentage);
-        } else {
-            portfolio.setTotalPnlPercentage(BigDecimal.ZERO);
-        }
-    }
     
     @Transactional
     public OrderResponse createLimitOrder(UUID userId, PlaceOrderDto dto) {
@@ -475,14 +357,15 @@ public class OrderService {
         log.debug("Applying BUY order {} at price {}", order.getOrderId(), price);
         
         BigDecimal commission = order.getTotalAmount().multiply(COMMISSION_RATE);
+        BigDecimal totalCost = order.getTotalAmount().add(commission);
         
-        // Create trade
         Trade trade = createTrade(order, price, commission);
-        trade = tradeRepository.save(trade);
+        tradeRepository.save(trade);
         
-        // Update holdings and portfolio
-        updateHoldingsAndPortfolio(order.getUserId(), order.getSymbol(), Order.OrderSide.BUY, 
-                                 order.getQuantity(), price, commission);
+        holdingService.updateOnBuy(order.getUserId(), order.getSymbol(), order.getQuantity(), 
+                                  order.getTotalAmount(), commission);
+        portfolioService.updateBalance(order.getUserId(), totalCost, true);
+        portfolioService.recalculate(order.getUserId());
         
         log.debug("Successfully applied BUY order {}", order.getOrderId());
     }
@@ -492,14 +375,15 @@ public class OrderService {
         log.debug("Applying SELL order {} at price {}", order.getOrderId(), price);
         
         BigDecimal commission = order.getTotalAmount().multiply(COMMISSION_RATE);
+        BigDecimal netProceeds = order.getTotalAmount().subtract(commission);
         
-        // Create trade
         Trade trade = createTrade(order, price, commission);
-        trade = tradeRepository.save(trade);
+        tradeRepository.save(trade);
         
-        // Update holdings and portfolio
-        updateHoldingsAndPortfolio(order.getUserId(), order.getSymbol(), Order.OrderSide.SELL, 
-                                 order.getQuantity(), price, commission);
+        holdingService.updateOnSell(order.getUserId(), order.getSymbol(), order.getQuantity(), 
+                                   order.getTotalAmount(), commission);
+        portfolioService.updateBalance(order.getUserId(), netProceeds, false);
+        portfolioService.recalculate(order.getUserId());
         
         log.debug("Successfully applied SELL order {}", order.getOrderId());
     }
