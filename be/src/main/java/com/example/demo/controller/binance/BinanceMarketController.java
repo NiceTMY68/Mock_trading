@@ -6,7 +6,6 @@ import com.example.demo.client.binance.service.BinanceRestClient;
 import com.example.demo.client.binance.service.BinanceProxyService;
 import com.example.demo.dto.KlineParams;
 import com.example.demo.dto.KlinesResponseDto;
-import com.example.demo.dto.TickerResponseDto;
 import com.example.demo.entity.User;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.service.FeatureFlagService;

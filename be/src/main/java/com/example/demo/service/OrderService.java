@@ -26,7 +26,6 @@ public class OrderService {
     private final HoldingRepository holdingRepository;
     private final PortfolioRepository portfolioRepository;
     private final PriceService priceService;
-    private final AuditService auditService;
     
     private static final BigDecimal COMMISSION_RATE = new BigDecimal("0.001"); // 0.1% commission
     
@@ -57,17 +56,11 @@ public class OrderService {
             Order order = createOrder(userId, dto, latestPrice, totalAmount, commission);
             order = orderRepository.save(order);
             
-            Trade trade = createTrade(order, latestPrice, commission);
-            trade = tradeRepository.save(trade);
-            
-            updateHoldingsAndPortfolio(userId, dto.getSymbol(), dto.getSide(), dto.getQuantity(), latestPrice, commission);
-            
-            auditService.logRequest(
-                UUID.randomUUID(),
-                userId,
-                "/api/orders/market",
-                null
-            );
+            if (dto.getSide() == Order.OrderSide.BUY) {
+                applyBuy(order, latestPrice);
+            } else {
+                applySell(order, latestPrice);
+            }
             
             log.info("Successfully placed market order {} for user {}", order.getOrderId(), userId);
             
@@ -311,8 +304,6 @@ public class OrderService {
             Order order = createPendingOrder(userId, dto, totalAmount, commission);
             order = orderRepository.save(order);
             
-            auditService.logRequest(UUID.randomUUID(), userId, "/api/orders/limit", null);
-            
             log.info("Successfully created limit order {} for user {}", order.getOrderId(), userId);
             
             return OrderResponse.builder()
@@ -480,5 +471,39 @@ public class OrderService {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
+    }
+    
+    @Transactional
+    public void applyBuy(Order order, BigDecimal price) {
+        log.debug("Applying BUY order {} at price {}", order.getOrderId(), price);
+        
+        BigDecimal commission = order.getTotalAmount().multiply(COMMISSION_RATE);
+        
+        // Create trade
+        Trade trade = createTrade(order, price, commission);
+        trade = tradeRepository.save(trade);
+        
+        // Update holdings and portfolio
+        updateHoldingsAndPortfolio(order.getUserId(), order.getSymbol(), Order.OrderSide.BUY, 
+                                 order.getQuantity(), price, commission);
+        
+        log.debug("Successfully applied BUY order {}", order.getOrderId());
+    }
+    
+    @Transactional
+    public void applySell(Order order, BigDecimal price) {
+        log.debug("Applying SELL order {} at price {}", order.getOrderId(), price);
+        
+        BigDecimal commission = order.getTotalAmount().multiply(COMMISSION_RATE);
+        
+        // Create trade
+        Trade trade = createTrade(order, price, commission);
+        trade = tradeRepository.save(trade);
+        
+        // Update holdings and portfolio
+        updateHoldingsAndPortfolio(order.getUserId(), order.getSymbol(), Order.OrderSide.SELL, 
+                                 order.getQuantity(), price, commission);
+        
+        log.debug("Successfully applied SELL order {}", order.getOrderId());
     }
 }

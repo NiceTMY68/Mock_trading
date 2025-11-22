@@ -14,7 +14,6 @@ import com.example.demo.config.CacheConfig;
 import com.example.demo.util.CacheKeyUtil;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -27,6 +26,7 @@ public class BinanceMessageHandler {
     private final ObjectMapper objectMapper;
     private final CacheService cacheService;
     private final PriceService priceService;
+    private final CacheConfig cacheConfig;
 
     public void handleMessage(String message) {
         try {
@@ -62,10 +62,10 @@ public class BinanceMessageHandler {
             String symbol = aggTrade.getSymbol();
             
             String tradeKey = CacheKeyUtil.tradeKey(symbol);
-            cacheService.put(tradeKey, aggTrade, CacheConfig.MARKET_DATA_TTL);
+            cacheService.put(tradeKey, aggTrade, cacheConfig.getMarketDataTtl());
             
             String priceKey = CacheKeyUtil.priceKey(symbol);
-            cacheService.put(priceKey, aggTrade.getPrice().toString(), CacheConfig.MARKET_DATA_TTL);
+            cacheService.put(priceKey, aggTrade.getPrice().toString(), cacheConfig.getMarketDataTtl());
             
         } catch (Exception e) {
             log.error("Error handling AggTrade: {}", e.getMessage(), e);
@@ -79,7 +79,7 @@ public class BinanceMessageHandler {
             String symbol = kline.getSymbol();
             
             String redisKey = CacheKeyUtil.websocketKlineKey(symbol, k.getInterval());
-            cacheService.put(redisKey, kline, CacheConfig.KLINE_TTL);
+            cacheService.put(redisKey, kline, cacheConfig.getKlinesTtl());
             
             // Persist price snapshot if kline is closed
             if (k.getIsClosed() != null && k.getIsClosed()) {
@@ -108,7 +108,7 @@ public class BinanceMessageHandler {
             String symbol = depth.getSymbol();
             
             String redisKey = CacheKeyUtil.depthKey(symbol);
-            cacheService.put(redisKey, depth, CacheConfig.MARKET_DATA_TTL);
+            cacheService.put(redisKey, depth, cacheConfig.getMarketDataTtl());
             
         } catch (Exception e) {
             log.error("Error handling Depth: {}", e.getMessage(), e);
