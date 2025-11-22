@@ -64,7 +64,6 @@ com\example\demo\config\RedisConfig.class
 com\example\demo\entity\Notification$Type.class
 com\example\demo\entity\WatchlistItem.class
 com\example\demo\entity\PriceSnapshot.class
-com\example\demo\service\UsageService.class
 com\example\demo\util\AuditLoggingHelper$AuditContext.class
 com\example\demo\client\binance\model\BinanceTicker24hr.class
 com\example\demo\dto\CheckoutResponseDto$CheckoutResponseDtoBuilder.class

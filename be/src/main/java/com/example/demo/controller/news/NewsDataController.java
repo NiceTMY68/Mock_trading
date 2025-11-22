@@ -1,14 +1,15 @@
 package com.example.demo.controller.news;
 
-import com.example.demo.client.newsdata.model.NewsDataResponse;
-import com.example.demo.client.newsdata.service.NewsDataRestClient;
-import com.example.demo.service.AuditService;
+import com.example.demo.client.newsdata.service.NewsProxyService;
+import com.example.demo.dto.NewsQueryParams;
+import com.example.demo.dto.NewsResponseDto;
 import com.example.demo.service.FeatureFlagService;
+import com.example.demo.util.AuditLoggingHelper;
 import com.example.demo.util.ControllerHelper;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,11 +23,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class NewsDataController {
 
-    private final NewsDataRestClient newsDataRestClient;
-    private final AuditService auditService;
+    private final NewsProxyService newsProxyService;
     private final ObjectMapper objectMapper;
     private final FeatureFlagService featureFlagService;
     private final ControllerHelper controllerHelper;
+    private final AuditLoggingHelper auditLoggingHelper;
 
     private UUID getCurrentUserId() {
         return controllerHelper.getCurrentUserId();
@@ -35,54 +36,45 @@ public class NewsDataController {
     @GetMapping("/crypto")
     public ResponseEntity<?> getCryptoNews(@RequestParam Map<String, String> parameters) {
         UUID requestId = UUID.randomUUID();
-        long startTime = System.currentTimeMillis();
+        UUID userId = getCurrentUserId();
+        
+        var ctx = auditLoggingHelper.start("/api/v1/news/crypto", userId, objectMapper.valueToTree(parameters));
         
         try {
-            // Check if user has access to crypto news (premium feature)
-            UUID userId = getCurrentUserId();
             if (userId != null && !featureFlagService.isFeatureEnabled(userId, FeatureFlagService.REAL_TIME_ALERTS)) {
-                return ResponseEntity.status(403)
-                        .body(Map.of(
-                                "success", false,
-                                "error", "Crypto news access requires premium subscription",
-                                "requestId", requestId.toString()
-                        ));
-            }
-            JsonNode params = objectMapper.valueToTree(parameters);
-            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/news/crypto", params);
-            
-            NewsDataResponse newsData = newsDataRestClient.getCryptoNews(parameters);
-            
-            if (newsData == null) {
-                long latencyMs = System.currentTimeMillis() - startTime;
-                auditService.finishRequest(requestId, false, "newsdata", 
-                    objectMapper.createObjectNode().put("error", "Failed to fetch news"), latencyMs);
-                return ResponseEntity.internalServerError()
-                        .body(Map.of("success", false, "requestId", requestId.toString(), "error", "Failed to fetch news"));
+                return auditLoggingHelper.error(ctx, "Crypto news access requires premium subscription", 
+                    HttpStatus.FORBIDDEN, "newsdata");
             }
             
-            long latencyMs = System.currentTimeMillis() - startTime;
-            JsonNode providerMeta = objectMapper.createObjectNode()
-                    .put("status", newsData.getStatus())
-                    .put("totalResults", newsData.getTotalResults());
-            auditService.finishRequest(requestId, false, "newsdata", providerMeta, latencyMs);
+            NewsQueryParams queryParams = NewsQueryParams.builder()
+                    .fromDate(parseInstant(parameters.get("from_date")))
+                    .toDate(parseInstant(parameters.get("to_date")))
+                    .page(parameters.containsKey("page") ? Integer.parseInt(parameters.get("page")) : null)
+                    .build();
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("requestId", requestId.toString());
-            response.put("status", newsData.getStatus());
-            response.put("totalResults", newsData.getTotalResults());
-            response.put("data", newsData.getResults());
-            response.put("nextPage", newsData.getNextPage());
+            NewsResponseDto response = newsProxyService.getCryptoNews(requestId, userId, queryParams);
             
-            return ResponseEntity.ok(response);
+            if (response.getData() == null) {
+                return auditLoggingHelper.error(ctx, "Failed to fetch news", 
+                    HttpStatus.INTERNAL_SERVER_ERROR, "newsdata");
+            }
+            
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("success", true);
+            responseMap.put("requestId", response.getRequestId().toString());
+            responseMap.put("provider", response.getProvider());
+            responseMap.put("cached", response.isCached());
+            responseMap.put("status", response.getData().getStatus());
+            responseMap.put("totalResults", response.getData().getTotalResults());
+            responseMap.put("data", response.getData().getResults());
+            responseMap.put("nextPage", response.getData().getNextPage());
+            
+            return ResponseEntity.ok(responseMap);
+            
         } catch (Exception e) {
             log.error("Error getting crypto news: {}", e.getMessage(), e);
-            long latencyMs = System.currentTimeMillis() - startTime;
-            auditService.finishRequest(requestId, false, "newsdata", 
-                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
+            return auditLoggingHelper.error(ctx, e.getMessage(), 
+                HttpStatus.INTERNAL_SERVER_ERROR, "newsdata");
         }
     }
 
@@ -91,46 +83,59 @@ public class NewsDataController {
             @PathVariable String endpoint,
             @RequestParam Map<String, String> parameters) {
         UUID requestId = UUID.randomUUID();
-        long startTime = System.currentTimeMillis();
+        UUID userId = getCurrentUserId();
+        
+        var ctx = auditLoggingHelper.start("/api/v1/news/" + endpoint, userId, objectMapper.valueToTree(parameters));
         
         try {
-            JsonNode params = objectMapper.valueToTree(parameters);
-            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/news/" + endpoint, params);
-            
-            NewsDataResponse newsData = newsDataRestClient.getNews(endpoint, parameters);
-            
-            if (newsData == null) {
-                long latencyMs = System.currentTimeMillis() - startTime;
-                auditService.finishRequest(requestId, false, "newsdata", 
-                    objectMapper.createObjectNode().put("error", "Failed to fetch news"), latencyMs);
-                return ResponseEntity.internalServerError()
-                        .body(Map.of("success", false, "requestId", requestId.toString(), "error", "Failed to fetch news"));
+            if (userId != null && !featureFlagService.isFeatureEnabled(userId, FeatureFlagService.REAL_TIME_ALERTS)) {
+                return auditLoggingHelper.error(ctx, "News access requires premium subscription", 
+                    HttpStatus.FORBIDDEN, "newsdata");
             }
             
-            long latencyMs = System.currentTimeMillis() - startTime;
-            JsonNode providerMeta = objectMapper.createObjectNode()
-                    .put("endpoint", endpoint)
-                    .put("status", newsData.getStatus())
-                    .put("totalResults", newsData.getTotalResults());
-            auditService.finishRequest(requestId, false, "newsdata", providerMeta, latencyMs);
+            NewsQueryParams queryParams = NewsQueryParams.builder()
+                    .endpoint(endpoint)
+                    .query(parameters.get("q"))
+                    .fromDate(parseInstant(parameters.get("from_date")))
+                    .toDate(parseInstant(parameters.get("to_date")))
+                    .page(parameters.containsKey("page") ? Integer.parseInt(parameters.get("page")) : null)
+                    .build();
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("requestId", requestId.toString());
-            response.put("status", newsData.getStatus());
-            response.put("totalResults", newsData.getTotalResults());
-            response.put("data", newsData.getResults());
-            response.put("nextPage", newsData.getNextPage());
+            NewsResponseDto response = newsProxyService.getCryptoNews(requestId, userId, queryParams);
             
-            return ResponseEntity.ok(response);
+            if (response.getData() == null) {
+                return auditLoggingHelper.error(ctx, "Failed to fetch news", 
+                    HttpStatus.INTERNAL_SERVER_ERROR, "newsdata");
+            }
+            
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("success", true);
+            responseMap.put("requestId", response.getRequestId().toString());
+            responseMap.put("provider", response.getProvider());
+            responseMap.put("cached", response.isCached());
+            responseMap.put("status", response.getData().getStatus());
+            responseMap.put("totalResults", response.getData().getTotalResults());
+            responseMap.put("data", response.getData().getResults());
+            responseMap.put("nextPage", response.getData().getNextPage());
+            
+            return ResponseEntity.ok(responseMap);
+            
         } catch (Exception e) {
             log.error("Error getting news from {}: {}", endpoint, e.getMessage(), e);
-            long latencyMs = System.currentTimeMillis() - startTime;
-            auditService.finishRequest(requestId, false, "newsdata", 
-                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
+            return auditLoggingHelper.error(ctx, e.getMessage(), 
+                HttpStatus.INTERNAL_SERVER_ERROR, "newsdata");
+        }
+    }
+    
+    private java.time.Instant parseInstant(String dateStr) {
+        if (dateStr == null || dateStr.isEmpty()) {
+            return null;
+        }
+        try {
+            return java.time.Instant.parse(dateStr);
+        } catch (Exception e) {
+            log.debug("Failed to parse date: {}", dateStr);
+            return null;
         }
     }
 }
-

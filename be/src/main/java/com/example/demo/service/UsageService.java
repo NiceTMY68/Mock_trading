@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -19,6 +22,7 @@ import java.util.UUID;
 public class UsageService {
     
     private final UsageMetricRepository usageMetricRepository;
+    private final ObjectMapper objectMapper;
     
     public static final String NEWS_API_CALLS = "news.api.calls";
     public static final String NEWS_API_ARTICLES = "news.api.articles";
@@ -37,6 +41,30 @@ public class UsageService {
                 .userId(userId)
                 .amount(amount)
                 .metadata(metadata)
+                .build();
+            
+            usageMetricRepository.save(metric);
+            log.debug("Recorded usage: key={}, userId={}, amount={}", metricKey, userId, amount);
+            
+        } catch (Exception e) {
+            log.error("Failed to record usage metric: key={}, userId={}, amount={}", 
+                metricKey, userId, amount, e);
+        }
+    }
+    
+    @Transactional
+    public void incrementWithMetadata(String metricKey, UUID userId, long amount, JsonNode metadata) {
+        try {
+            String metadataStr = metadata != null ? objectMapper.writeValueAsString(metadata) : null;
+            if (metadataStr != null && metadataStr.length() > 500) {
+                metadataStr = metadataStr.substring(0, 497) + "...";
+            }
+            
+            UsageMetric metric = UsageMetric.builder()
+                .metricKey(metricKey)
+                .userId(userId)
+                .amount((int) amount)
+                .metadata(metadataStr)
                 .build();
             
             usageMetricRepository.save(metric);
@@ -102,4 +130,3 @@ public class UsageService {
         return usageMetricRepository.findByMetricKeyOrderByCreatedAtDesc(metricKey);
     }
 }
-

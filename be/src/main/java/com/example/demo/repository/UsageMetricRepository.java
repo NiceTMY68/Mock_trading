@@ -34,5 +34,11 @@ public interface UsageMetricRepository extends JpaRepository<UsageMetric, Long> 
     
     @Query("SELECT u.userId, SUM(u.amount) FROM UsageMetric u WHERE u.metricKey = :metricKey AND u.createdAt >= :since GROUP BY u.userId ORDER BY SUM(u.amount) DESC")
     List<Object[]> getTopUsersByMetricKeySince(@Param("metricKey") String metricKey, @Param("since") Instant since);
+    
+    @Query("SELECT COUNT(u) FROM UsageMetric u WHERE u.metricKey = :metricKey AND u.userId = :userId")
+    Long countByMetricKeyAndUserId(@Param("metricKey") String metricKey, @Param("userId") UUID userId);
+    
+    @Query("SELECT SUM(u.amount) FROM UsageMetric u WHERE u.metricKey = :metricKey AND u.userId = :userId")
+    Long sumAmountByMetricKeyAndUserId(@Param("metricKey") String metricKey, @Param("userId") UUID userId);
 }
 
