@@ -3,6 +3,8 @@ package com.example.demo.util;
 import com.example.demo.dto.KlineParams;
 import com.example.demo.entity.User;
 import com.example.demo.exception.BadRequestException;
+import com.example.demo.service.FeatureFlagService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -17,7 +19,10 @@ import java.util.Set;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ParamValidator {
+    
+    private final FeatureFlagService featureFlagService;
     
     @Value("${app.kline.valid-intervals:1m,5m,15m,1h,4h,1d}")
     private String validIntervalsConfig;
@@ -135,15 +140,15 @@ public class ParamValidator {
     }
     
     /**
-     * Get max limit based on user tier
+     * Get max limit based on user subscription plan
      */
     private Integer getMaxLimit(User user) {
         if (user == null) {
             return maxLimitFree;
         }
         
-        // Check if user has "PRO" role
-        if ("PRO".equalsIgnoreCase(user.getRole())) {
+        String plan = featureFlagService.getUserPlan(user.getId());
+        if ("pro".equalsIgnoreCase(plan) || "premium".equalsIgnoreCase(plan)) {
             return maxLimitPro;
         }
         
@@ -151,15 +156,15 @@ public class ParamValidator {
     }
     
     /**
-     * Get max range days based on user tier
+     * Get max range days based on user subscription plan
      */
     private Integer getMaxRangeDays(User user) {
         if (user == null) {
             return maxRangeDaysFree;
         }
         
-        // Check if user has "PRO" role
-        if ("PRO".equalsIgnoreCase(user.getRole())) {
+        String plan = featureFlagService.getUserPlan(user.getId());
+        if ("pro".equalsIgnoreCase(plan) || "premium".equalsIgnoreCase(plan)) {
             return maxRangeDaysPro;
         }
         
