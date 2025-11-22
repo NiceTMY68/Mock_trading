@@ -2,10 +2,11 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.OrderResponse;
 import com.example.demo.dto.PlaceOrderDto;
-import com.example.demo.entity.User;
-import com.example.demo.repository.UserRepository;
 import com.example.demo.service.OrderService;
 import com.example.demo.service.FeatureFlagService;
+import com.example.demo.util.AuditLoggingHelper;
+import com.example.demo.util.ControllerHelper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,8 +34,10 @@ import java.util.UUID;
 public class OrderController {
     
     private final OrderService orderService;
-    private final UserRepository userRepository;
     private final FeatureFlagService featureFlagService;
+    private final AuditLoggingHelper auditLoggingHelper;
+    private final ControllerHelper controllerHelper;
+    private final ObjectMapper objectMapper;
     
     @Operation(
         summary = "Place order",
@@ -47,19 +51,17 @@ public class OrderController {
     )
     @PostMapping
     public ResponseEntity<?> placeOrder(@Valid @RequestBody PlaceOrderDto dto, Authentication authentication) {
+        UUID userId = controllerHelper.getCurrentUserId();
+        var ctx = auditLoggingHelper.start("/api/orders", userId, objectMapper.valueToTree(dto));
+        
         try {
-            UUID userId = getCurrentUserId(authentication);
             if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "User not authenticated"));
+                return auditLoggingHelper.error(ctx, "User not authenticated", HttpStatus.UNAUTHORIZED, "orders");
             }
             
             if (!featureFlagService.isFeatureEnabled(userId, FeatureFlagService.TRADING)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of(
-                                "error", "Trading requires premium subscription",
-                                "message", "Please upgrade to access trading features"
-                        ));
+                return auditLoggingHelper.error(ctx, "Trading requires premium subscription", 
+                    HttpStatus.FORBIDDEN, "orders");
             }
             
             OrderResponse response;
@@ -73,38 +75,54 @@ public class OrderController {
             
             log.info("Order placed successfully for user {}: {}", userId, response.getOrderId());
             
-            return ResponseEntity.ok(response);
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("requestId", ctx.requestId().toString());
+            responseMap.put("orderId", response.getOrderId());
+            responseMap.put("symbol", response.getSymbol());
+            responseMap.put("type", response.getType());
+            responseMap.put("side", response.getSide());
+            responseMap.put("status", response.getStatus());
+            responseMap.put("quantity", response.getQuantity());
+            responseMap.put("price", response.getPrice());
+            
+            return auditLoggingHelper.ok(ctx, responseMap, "orders", false, 
+                objectMapper.createObjectNode().put("orderId", response.getOrderId().toString()));
             
         } catch (IllegalArgumentException e) {
             log.warn("Invalid order request: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Invalid order request", "message", e.getMessage()));
+            return auditLoggingHelper.error(ctx, "Invalid order request: " + e.getMessage(), 
+                HttpStatus.BAD_REQUEST, "orders");
                     
         } catch (RuntimeException e) {
             log.error("Error placing order: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to place order", "message", e.getMessage()));
+            return auditLoggingHelper.error(ctx, "Failed to place order: " + e.getMessage(), 
+                HttpStatus.INTERNAL_SERVER_ERROR, "orders");
         }
     }
     
     @GetMapping("/{orderId}")
     public ResponseEntity<?> getOrder(@PathVariable UUID orderId, Authentication authentication) {
+        UUID userId = controllerHelper.getCurrentUserId();
+        var ctx = auditLoggingHelper.start("/api/orders/" + orderId, userId, 
+            objectMapper.createObjectNode().put("orderId", orderId.toString()));
+        
         try {
-            UUID userId = getCurrentUserId(authentication);
             if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "User not authenticated"));
+                return auditLoggingHelper.error(ctx, "User not authenticated", HttpStatus.UNAUTHORIZED, "orders");
             }
             
-            return ResponseEntity.ok(Map.of(
-                    "orderId", orderId,
-                    "message", "Order details endpoint - to be implemented"
-            ));
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("requestId", ctx.requestId().toString());
+            responseMap.put("orderId", orderId);
+            responseMap.put("message", "Order details endpoint - to be implemented");
+            
+            return auditLoggingHelper.ok(ctx, responseMap, "orders", false, 
+                objectMapper.createObjectNode().put("orderId", orderId.toString()));
             
         } catch (Exception e) {
             log.error("Error getting order {}: {}", orderId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to get order", "message", e.getMessage()));
+            return auditLoggingHelper.error(ctx, "Failed to get order: " + e.getMessage(), 
+                HttpStatus.INTERNAL_SERVER_ERROR, "orders");
         }
     }
     
@@ -113,114 +131,117 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             Authentication authentication) {
+        UUID userId = controllerHelper.getCurrentUserId();
+        var ctx = auditLoggingHelper.start("/api/orders", userId, 
+            objectMapper.createObjectNode().put("page", page).put("size", size));
+        
         try {
-            UUID userId = getCurrentUserId(authentication);
             if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "User not authenticated"));
+                return auditLoggingHelper.error(ctx, "User not authenticated", HttpStatus.UNAUTHORIZED, "orders");
             }
             
-            return ResponseEntity.ok(Map.of(
-                    "orders", "[]",
-                    "page", page,
-                    "size", size,
-                    "message", "User orders endpoint - to be implemented"
-            ));
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("requestId", ctx.requestId().toString());
+            responseMap.put("orders", "[]");
+            responseMap.put("page", page);
+            responseMap.put("size", size);
+            responseMap.put("message", "User orders endpoint - to be implemented");
+            
+            return auditLoggingHelper.ok(ctx, responseMap, "orders", false, 
+                objectMapper.createObjectNode().put("page", page).put("size", size));
             
         } catch (Exception e) {
             log.error("Error getting user orders: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to get orders", "message", e.getMessage()));
+            return auditLoggingHelper.error(ctx, "Failed to get orders: " + e.getMessage(), 
+                HttpStatus.INTERNAL_SERVER_ERROR, "orders");
         }
     }
     
     @GetMapping("/portfolio")
     public ResponseEntity<?> getPortfolio(Authentication authentication) {
+        UUID userId = controllerHelper.getCurrentUserId();
+        var ctx = auditLoggingHelper.start("/api/orders/portfolio", userId, objectMapper.createObjectNode());
+        
         try {
-            UUID userId = getCurrentUserId(authentication);
             if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "User not authenticated"));
+                return auditLoggingHelper.error(ctx, "User not authenticated", HttpStatus.UNAUTHORIZED, "orders");
             }
             
-            return ResponseEntity.ok(Map.of(
-                    "portfolio", "Portfolio details - to be implemented",
-                    "message", "Portfolio endpoint - to be implemented"
-            ));
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("requestId", ctx.requestId().toString());
+            responseMap.put("portfolio", "Portfolio details - to be implemented");
+            responseMap.put("message", "Portfolio endpoint - to be implemented");
+            
+            return auditLoggingHelper.ok(ctx, responseMap, "orders", false, objectMapper.createObjectNode());
             
         } catch (Exception e) {
             log.error("Error getting portfolio: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to get portfolio", "message", e.getMessage()));
+            return auditLoggingHelper.error(ctx, "Failed to get portfolio: " + e.getMessage(), 
+                HttpStatus.INTERNAL_SERVER_ERROR, "orders");
         }
     }
     
     @GetMapping("/holdings")
     public ResponseEntity<?> getHoldings(Authentication authentication) {
+        UUID userId = controllerHelper.getCurrentUserId();
+        var ctx = auditLoggingHelper.start("/api/orders/holdings", userId, objectMapper.createObjectNode());
+        
         try {
-            UUID userId = getCurrentUserId(authentication);
             if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "User not authenticated"));
+                return auditLoggingHelper.error(ctx, "User not authenticated", HttpStatus.UNAUTHORIZED, "orders");
             }
             
-            return ResponseEntity.ok(Map.of(
-                    "holdings", "Holdings details - to be implemented",
-                    "message", "Holdings endpoint - to be implemented"
-            ));
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("requestId", ctx.requestId().toString());
+            responseMap.put("holdings", "Holdings details - to be implemented");
+            responseMap.put("message", "Holdings endpoint - to be implemented");
+            
+            return auditLoggingHelper.ok(ctx, responseMap, "orders", false, objectMapper.createObjectNode());
             
         } catch (Exception e) {
             log.error("Error getting holdings: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to get holdings", "message", e.getMessage()));
+            return auditLoggingHelper.error(ctx, "Failed to get holdings: " + e.getMessage(), 
+                HttpStatus.INTERNAL_SERVER_ERROR, "orders");
         }
     }
     
     @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<?> cancelOrder(@PathVariable UUID orderId, Authentication authentication) {
+        UUID userId = controllerHelper.getCurrentUserId();
+        var ctx = auditLoggingHelper.start("/api/orders/" + orderId + "/cancel", userId, 
+            objectMapper.createObjectNode().put("orderId", orderId.toString()));
+        
         try {
-            UUID userId = getCurrentUserId(authentication);
             if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "User not authenticated"));
+                return auditLoggingHelper.error(ctx, "User not authenticated", HttpStatus.UNAUTHORIZED, "orders");
             }
             
             if (!featureFlagService.isFeatureEnabled(userId, FeatureFlagService.TRADING)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of(
-                                "error", "Trading requires premium subscription",
-                                "message", "Please upgrade to access trading features"
-                        ));
+                return auditLoggingHelper.error(ctx, "Trading requires premium subscription", 
+                    HttpStatus.FORBIDDEN, "orders");
             }
             
             OrderResponse response = orderService.cancelOrder(userId, orderId);
             
             log.info("Order cancelled successfully for user {}: {}", userId, orderId);
             
-            return ResponseEntity.ok(response);
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("requestId", ctx.requestId().toString());
+            responseMap.put("orderId", response.getOrderId());
+            responseMap.put("status", response.getStatus());
+            
+            return auditLoggingHelper.ok(ctx, responseMap, "orders", false, 
+                objectMapper.createObjectNode().put("orderId", orderId.toString()));
             
         } catch (IllegalArgumentException e) {
             log.warn("Invalid cancel request: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Invalid cancel request", "message", e.getMessage()));
+            return auditLoggingHelper.error(ctx, "Invalid cancel request: " + e.getMessage(), 
+                HttpStatus.BAD_REQUEST, "orders");
                     
         } catch (RuntimeException e) {
             log.error("Error cancelling order: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to cancel order", "message", e.getMessage()));
+            return auditLoggingHelper.error(ctx, "Failed to cancel order: " + e.getMessage(), 
+                HttpStatus.INTERNAL_SERVER_ERROR, "orders");
         }
-    }
-    
-    private UUID getCurrentUserId(Authentication authentication) {
-        try {
-            if (authentication != null && authentication.isAuthenticated() && 
-                !"anonymousUser".equals(authentication.getPrincipal())) {
-                String email = authentication.getName();
-                return userRepository.findByEmail(email).map(User::getId).orElse(null);
-            }
-        } catch (Exception e) {
-            log.debug("Could not get current user", e);
-        }
-        return null;
     }
 }

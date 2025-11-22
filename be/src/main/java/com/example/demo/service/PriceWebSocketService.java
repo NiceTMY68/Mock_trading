@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.config.RateLimiterConfig;
+import com.example.demo.dto.KlinePointDto;
 import com.example.demo.entity.PriceSnapshot;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
@@ -116,6 +117,55 @@ public class PriceWebSocketService {
             return;
         }
         publishSnapshot(snapshots.get(snapshots.size() - 1));
+    }
+
+    public void subscribe(WebSocketSession session, UUID userId, List<String> symbols) throws IOException {
+        SessionContext context = sessions.get(session.getId());
+        if (context == null || !context.userId.equals(userId)) {
+            throw new IllegalStateException("Session not found or user mismatch");
+        }
+        handleSubscribe(context, symbols);
+    }
+
+    public void unsubscribe(WebSocketSession session, UUID userId, List<String> symbols) throws IOException {
+        SessionContext context = sessions.get(session.getId());
+        if (context == null || !context.userId.equals(userId)) {
+            throw new IllegalStateException("Session not found or user mismatch");
+        }
+        handleUnsubscribe(context, symbols);
+    }
+
+    public void publishPrice(String symbol, KlinePointDto snapshot) {
+        if (snapshot == null || symbol == null) {
+            return;
+        }
+        String normalizedSymbol = symbol.toUpperCase();
+        Set<String> subscribers = symbolSubscriptions.get(normalizedSymbol);
+        if (subscribers == null || subscribers.isEmpty()) {
+            return;
+        }
+
+        ObjectNode payload = buildEvent("price")
+                .put("symbol", normalizedSymbol)
+                .put("timestamp", snapshot.getTimestamp() != null ? snapshot.getTimestamp().toString() : Instant.now().toString());
+
+        if (snapshot.getOpen() != null) {
+            payload.put("open", snapshot.getOpen());
+        }
+        if (snapshot.getHigh() != null) {
+            payload.put("high", snapshot.getHigh());
+        }
+        if (snapshot.getLow() != null) {
+            payload.put("low", snapshot.getLow());
+        }
+        if (snapshot.getClose() != null) {
+            payload.put("close", snapshot.getClose());
+        }
+        if (snapshot.getVolume() != null) {
+            payload.put("volume", snapshot.getVolume());
+        }
+
+        broadcast(normalizedSymbol, subscribers, payload);
     }
 
     public void publishSnapshot(PriceSnapshot snapshot) {
@@ -395,4 +445,3 @@ public class PriceWebSocketService {
         }
     }
 }
-

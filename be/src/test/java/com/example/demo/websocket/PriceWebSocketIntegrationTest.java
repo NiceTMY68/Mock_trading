@@ -1,5 +1,6 @@
 package com.example.demo.websocket;
 
+import com.example.demo.dto.KlinePointDto;
 import com.example.demo.entity.PriceSnapshot;
 import com.example.demo.entity.Subscription;
 import com.example.demo.entity.User;
@@ -117,7 +118,24 @@ class PriceWebSocketIntegrationTest {
         assertThat(update).isNotNull()
                 .contains("\"type\":\"price\"")
                 .contains("\"symbol\":\"BTCUSDT\"");
+
+        KlinePointDto klinePoint = KlinePointDto.builder()
+                .timestamp(Instant.now())
+                .open(new BigDecimal("50200"))
+                .close(new BigDecimal("50400"))
+                .high(new BigDecimal("50500"))
+                .low(new BigDecimal("50100"))
+                .volume(new BigDecimal("200.50"))
+                .interval("1m")
+                .build();
+
+        priceWebSocketService.publishPrice("BTCUSDT", klinePoint);
+
+        String klineUpdate = messages.poll(5, TimeUnit.SECONDS);
+        assertThat(klineUpdate).isNotNull()
+                .contains("\"type\":\"price\"")
+                .contains("\"symbol\":\"BTCUSDT\"")
+                .contains("\"close\":50400");
     }
 }
-
 
