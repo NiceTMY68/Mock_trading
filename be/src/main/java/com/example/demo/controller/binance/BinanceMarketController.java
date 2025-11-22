@@ -3,7 +3,10 @@ package com.example.demo.controller.binance;
 import com.example.demo.client.binance.model.BinanceSymbolInfo;
 import com.example.demo.client.binance.model.BinanceTicker24hr;
 import com.example.demo.client.binance.service.BinanceRestClient;
+import com.example.demo.client.binance.service.BinanceProxyService;
 import com.example.demo.dto.KlineParams;
+import com.example.demo.dto.KlinesResponseDto;
+import com.example.demo.dto.TickerResponseDto;
 import com.example.demo.entity.User;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.service.FeatureFlagService;
@@ -36,6 +39,7 @@ import java.util.UUID;
 public class BinanceMarketController {
 
     private final BinanceRestClient binanceRestClient;
+    private final BinanceProxyService binanceProxyService;
     private final ObjectMapper objectMapper;
     private final ParamNormalizer paramNormalizer;
     private final ParamValidator paramValidator;
@@ -222,41 +226,41 @@ public class BinanceMarketController {
     
     @GetMapping("/kline")
     public ResponseEntity<?> getKlineData(@RequestParam Map<String, String> rawParams) {
+        UUID requestId = UUID.randomUUID();
+        
         try {
-            var ctx = auditLoggingHelper.start("/api/v1/binance/market/kline", getCurrentUserId(), objectMapper.valueToTree(rawParams));
-            
             UUID userId = getCurrentUserId();
             if (userId != null && !featureFlagService.isHistoricalDataEnabled(userId)) {
+                var ctx = auditLoggingHelper.start("/api/v1/binance/market/kline", userId, objectMapper.valueToTree(rawParams));
                 return auditLoggingHelper.error(ctx, "Historical data access requires premium subscription", HttpStatus.FORBIDDEN, "binance");
             }
             
+            // Normalize and validate params
             KlineParams klineParams = paramNormalizer.normalizeKlineParams(rawParams);
             User currentUser = getCurrentUser();
             paramValidator.validateKlineParams(currentUser, klineParams);
             
-            Map<String, Object> mockKlineData = new HashMap<>();
-            mockKlineData.put("symbol", klineParams.getSymbol());
-            mockKlineData.put("interval", klineParams.getInterval());
-            mockKlineData.put("data", List.of());
-            mockKlineData.put("normalizedParams", klineParams);
+            // Use proxy service
+            KlinesResponseDto response = binanceProxyService.getKlines(requestId, userId, klineParams);
             
-            JsonNode providerMeta = objectMapper.createObjectNode()
-                    .put("symbol", klineParams.getSymbol())
-                    .put("interval", klineParams.getInterval())
-                    .put("limit", klineParams.getLimit());
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("success", true);
+            responseMap.put("requestId", response.getRequestId().toString());
+            responseMap.put("provider", response.getProvider());
+            responseMap.put("cached", response.isCached());
+            responseMap.put("params", response.getParams());
+            responseMap.put("data", response.getData());
             
-            return auditLoggingHelper.ok(ctx, mockKlineData, "binance", false, providerMeta);
+            return ResponseEntity.ok(responseMap);
             
         } catch (BadRequestException e) {
             log.warn("Invalid kline parameters: {}", e.getMessage());
-            JsonNode paramsNode = objectMapper.valueToTree(rawParams);
-            var errorCtx = auditLoggingHelper.start("/api/v1/binance/market/kline", getCurrentUserId(), paramsNode);
+            var errorCtx = auditLoggingHelper.start("/api/v1/binance/market/kline", getCurrentUserId(), objectMapper.valueToTree(rawParams));
             return auditLoggingHelper.error(errorCtx, e.getMessage(), HttpStatus.BAD_REQUEST, "binance");
             
         } catch (Exception e) {
             log.error("Error getting kline data: {}", e.getMessage(), e);
-            JsonNode paramsNode = objectMapper.valueToTree(rawParams);
-            var errorCtx = auditLoggingHelper.start("/api/v1/binance/market/kline", getCurrentUserId(), paramsNode);
+            var errorCtx = auditLoggingHelper.start("/api/v1/binance/market/kline", getCurrentUserId(), objectMapper.valueToTree(rawParams));
             return auditLoggingHelper.error(errorCtx, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, "binance");
         }
     }
