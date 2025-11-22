@@ -6,12 +6,11 @@ import com.example.demo.client.binance.service.BinanceRestClient;
 import com.example.demo.dto.KlineParams;
 import com.example.demo.entity.User;
 import com.example.demo.exception.BadRequestException;
-import com.example.demo.repository.UserRepository;
-import com.example.demo.service.AuditService;
 import com.example.demo.service.FeatureFlagService;
 import com.example.demo.util.ParamNormalizer;
 import com.example.demo.util.AuditLoggingHelper;
 import com.example.demo.util.ParamValidator;
+import com.example.demo.util.ControllerHelper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,8 +21,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -39,38 +36,19 @@ import java.util.UUID;
 public class BinanceMarketController {
 
     private final BinanceRestClient binanceRestClient;
-    private final AuditService auditService;
-    private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final ParamNormalizer paramNormalizer;
     private final ParamValidator paramValidator;
     private final FeatureFlagService featureFlagService;
     private final AuditLoggingHelper auditLoggingHelper;
+    private final ControllerHelper controllerHelper;
 
     private UUID getCurrentUserId() {
-        try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
-                String email = auth.getName();
-                return userRepository.findByEmail(email).map(User::getId).orElse(null);
-            }
-        } catch (Exception e) {
-            log.debug("Could not get current user", e);
-        }
-        return null;
+        return controllerHelper.getCurrentUserId();
     }
     
     private User getCurrentUser() {
-        try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
-                String email = auth.getName();
-                return userRepository.findByEmail(email).orElse(null);
-            }
-        } catch (Exception e) {
-            log.debug("Could not get current user", e);
-        }
-        return null;
+        return controllerHelper.getCurrentUser();
     }
 
     @Operation(
@@ -84,21 +62,12 @@ public class BinanceMarketController {
     public ResponseEntity<?> getTop3Coins() {
         var ctx = auditLoggingHelper.start("/api/v1/binance/market/top-3", getCurrentUserId(), objectMapper.createObjectNode());
         try {
-            // Execute business logic
             List<BinanceTicker24hr> top3 = binanceRestClient.getTopCoinsByMarketCap(3);
             JsonNode providerMeta = objectMapper.createObjectNode().put("count", top3.size());
-            auditLoggingHelper.finishSuccess(ctx, "binance", providerMeta);
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("requestId", ctx.requestId().toString());
-            response.put("data", top3);
-            response.put("count", top3.size());
-            return ResponseEntity.ok(response);
+            return auditLoggingHelper.okWithExtra(ctx, top3, Map.of("count", top3.size()), "binance", false, providerMeta);
         } catch (Exception e) {
             log.error("Error getting top 3 coins: {}", e.getMessage(), e);
-            auditLoggingHelper.finishError(ctx, "binance", e.getMessage());
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", e.getMessage()));
+            return auditLoggingHelper.error(ctx, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, "binance");
         }
     }
 
@@ -123,31 +92,23 @@ public class BinanceMarketController {
                 case "gainers" -> topCoins = binanceRestClient.getTopGainers(limit);
                 case "losers" -> topCoins = binanceRestClient.getTopLosers(limit);
                 default -> {
-                    auditLoggingHelper.finishError(ctx, "binance", "Invalid sortBy parameter");
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", "Invalid sortBy parameter"));
+                    return auditLoggingHelper.error(ctx, "Invalid sortBy parameter", org.springframework.http.HttpStatus.BAD_REQUEST, "binance");
                 }
             }
             
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("count", topCoins.size())
                     .put("sortBy", sortBy);
-            auditLoggingHelper.finishSuccess(ctx, "binance", providerMeta);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("requestId", ctx.requestId().toString());
-            response.put("data", topCoins);
-            response.put("count", topCoins.size());
-            response.put("sortBy", sortBy);
-            response.put("limit", limit);
+            Map<String, Object> extraFields = new HashMap<>();
+            extraFields.put("count", topCoins.size());
+            extraFields.put("sortBy", sortBy);
+            extraFields.put("limit", limit);
             
-            return ResponseEntity.ok(response);
+            return auditLoggingHelper.okWithExtra(ctx, topCoins, extraFields, "binance", false, providerMeta);
         } catch (Exception e) {
             log.error("Error getting top coins: {}", e.getMessage(), e);
-            auditLoggingHelper.finishError(ctx, "binance", e.getMessage());
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", e.getMessage()));
+            return auditLoggingHelper.error(ctx, e.getMessage(), org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "binance");
         }
     }
 
@@ -176,26 +137,20 @@ public class BinanceMarketController {
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("total", sortedTickers.size())
                     .put("returned", paginatedTickers.size());
-            auditLoggingHelper.finishSuccess(ctx, "binance", providerMeta);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("requestId", ctx.requestId().toString());
-            response.put("data", paginatedTickers);
-            response.put("pagination", Map.of(
+            Map<String, Object> extraFields = new HashMap<>();
+            extraFields.put("pagination", Map.of(
                     "page", page,
                     "size", size,
                     "total", sortedTickers.size(),
                     "totalPages", (int) Math.ceil((double) sortedTickers.size() / size)
             ));
-            response.put("sortBy", sortBy);
+            extraFields.put("sortBy", sortBy);
             
-            return ResponseEntity.ok(response);
+            return auditLoggingHelper.okWithExtra(ctx, paginatedTickers, extraFields, "binance", false, providerMeta);
         } catch (Exception e) {
             log.error("Error getting all coins: {}", e.getMessage(), e);
-            auditLoggingHelper.finishError(ctx, "binance", e.getMessage());
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", e.getMessage()));
+            return auditLoggingHelper.error(ctx, e.getMessage(), org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "binance");
         }
     }
 
@@ -215,21 +170,11 @@ public class BinanceMarketController {
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("count", searchResults.size())
                     .put("query", q);
-            auditLoggingHelper.finishSuccess(ctx, "binance", providerMeta);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("requestId", ctx.requestId().toString());
-            response.put("data", searchResults);
-            response.put("count", searchResults.size());
-            response.put("query", q);
-            
-            return ResponseEntity.ok(response);
+            return auditLoggingHelper.okWithExtra(ctx, searchResults, Map.of("count", searchResults.size(), "query", q), "binance", false, providerMeta);
         } catch (Exception e) {
             log.error("Error searching coins: {}", e.getMessage(), e);
-            auditLoggingHelper.finishError(ctx, "binance", e.getMessage());
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", e.getMessage()));
+            return auditLoggingHelper.error(ctx, e.getMessage(), org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "binance");
         }
     }
 
@@ -245,139 +190,74 @@ public class BinanceMarketController {
                     .orElse(null);
             
             if (coin == null) {
-                auditLoggingHelper.finishSuccess(ctx, "binance", objectMapper.createObjectNode().put("found", false));
-                return ResponseEntity.notFound().build();
+                return auditLoggingHelper.error(ctx, "Coin not found", HttpStatus.NOT_FOUND, "binance");
             }
             
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("symbol", symbol)
                     .put("found", true);
-            auditLoggingHelper.finishSuccess(ctx, "binance", providerMeta);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("requestId", ctx.requestId().toString());
-            response.put("data", coin);
-            
-            return ResponseEntity.ok(response);
+            return auditLoggingHelper.ok(ctx, coin, "binance", false, providerMeta);
         } catch (Exception e) {
             log.error("Error getting coin details: {}", e.getMessage(), e);
-            auditLoggingHelper.finishError(ctx, "binance", e.getMessage());
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", ctx.requestId().toString(), "error", e.getMessage()));
+            return auditLoggingHelper.error(ctx, e.getMessage(), org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "binance");
         }
     }
 
     @GetMapping("/symbols")
     public ResponseEntity<?> getAllSymbols() {
-        UUID requestId = UUID.randomUUID();
-        long startTime = System.currentTimeMillis();
-        
+        var ctx = auditLoggingHelper.start("/api/v1/binance/market/symbols", getCurrentUserId(), objectMapper.createObjectNode());
         try {
-            JsonNode params = objectMapper.createObjectNode();
-            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/market/symbols", params);
-            
             List<BinanceSymbolInfo> symbols = binanceRestClient.getAllSymbols();
             
-            long latencyMs = System.currentTimeMillis() - startTime;
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("count", symbols.size());
-            auditService.finishRequest(requestId, false, "binance", providerMeta, latencyMs);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("requestId", requestId.toString());
-            response.put("data", symbols);
-            response.put("count", symbols.size());
-            
-            return ResponseEntity.ok(response);
+            return auditLoggingHelper.okWithExtra(ctx, symbols, Map.of("count", symbols.size()), "binance", false, providerMeta);
         } catch (Exception e) {
             log.error("Error getting all symbols: {}", e.getMessage(), e);
-            long latencyMs = System.currentTimeMillis() - startTime;
-            auditService.finishRequest(requestId, false, "binance", 
-                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
+            return auditLoggingHelper.error(ctx, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, "binance");
         }
     }
     
-    /**
-     * Get kline/candlestick data with parameter validation
-     * Demonstrates normalize → validate → call pattern
-     */
     @GetMapping("/kline")
     public ResponseEntity<?> getKlineData(@RequestParam Map<String, String> rawParams) {
-        UUID requestId = UUID.randomUUID();
-        long startTime = System.currentTimeMillis();
-        
         try {
-            // Check if user has access to historical data (premium feature)
+            var ctx = auditLoggingHelper.start("/api/v1/binance/market/kline", getCurrentUserId(), objectMapper.valueToTree(rawParams));
+            
             UUID userId = getCurrentUserId();
             if (userId != null && !featureFlagService.isHistoricalDataEnabled(userId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of(
-                                "success", false,
-                                "error", "Historical data access requires premium subscription",
-                                "requestId", requestId.toString()
-                        ));
+                return auditLoggingHelper.error(ctx, "Historical data access requires premium subscription", HttpStatus.FORBIDDEN, "binance");
             }
             
-            // Step 1: Normalize parameters
             KlineParams klineParams = paramNormalizer.normalizeKlineParams(rawParams);
-            
-            // Step 2: Validate parameters (with user context for tier-based limits)
             User currentUser = getCurrentUser();
             paramValidator.validateKlineParams(currentUser, klineParams);
             
-            // Step 3: Convert to JSON for audit logging
-            JsonNode paramsNode = objectMapper.valueToTree(klineParams);
-            auditService.logRequest(requestId, getCurrentUserId(), "/api/v1/binance/market/kline", paramsNode);
-            
-            // Step 4: Call external provider (mocked for now - would call binanceRestClient.getKlineData)
-            // For demonstration, we'll return the normalized and validated params
             Map<String, Object> mockKlineData = new HashMap<>();
             mockKlineData.put("symbol", klineParams.getSymbol());
             mockKlineData.put("interval", klineParams.getInterval());
-            mockKlineData.put("data", List.of()); // Would be actual kline data
+            mockKlineData.put("data", List.of());
             mockKlineData.put("normalizedParams", klineParams);
             
-            // Step 5: Log completion
-            long latencyMs = System.currentTimeMillis() - startTime;
             JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("symbol", klineParams.getSymbol())
                     .put("interval", klineParams.getInterval())
                     .put("limit", klineParams.getLimit());
-            auditService.finishRequest(requestId, false, "binance", providerMeta, latencyMs);
             
-            // Step 6: Return response
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("requestId", requestId.toString());
-            response.put("data", mockKlineData);
-            
-            return ResponseEntity.ok(response);
+            return auditLoggingHelper.ok(ctx, mockKlineData, "binance", false, providerMeta);
             
         } catch (BadRequestException e) {
             log.warn("Invalid kline parameters: {}", e.getMessage());
-            long latencyMs = System.currentTimeMillis() - startTime;
-            auditService.finishRequest(requestId, false, "binance", 
-                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
-            
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("requestId", requestId.toString());
-            errorResponse.put("error", e.getMessage());
-            
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            JsonNode paramsNode = objectMapper.valueToTree(rawParams);
+            var errorCtx = auditLoggingHelper.start("/api/v1/binance/market/kline", getCurrentUserId(), paramsNode);
+            return auditLoggingHelper.error(errorCtx, e.getMessage(), HttpStatus.BAD_REQUEST, "binance");
             
         } catch (Exception e) {
             log.error("Error getting kline data: {}", e.getMessage(), e);
-            long latencyMs = System.currentTimeMillis() - startTime;
-            auditService.finishRequest(requestId, false, "binance", 
-                objectMapper.createObjectNode().put("error", e.getMessage()), latencyMs);
-            
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "requestId", requestId.toString(), "error", e.getMessage()));
+            JsonNode paramsNode = objectMapper.valueToTree(rawParams);
+            var errorCtx = auditLoggingHelper.start("/api/v1/binance/market/kline", getCurrentUserId(), paramsNode);
+            return auditLoggingHelper.error(errorCtx, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, "binance");
         }
     }
 }

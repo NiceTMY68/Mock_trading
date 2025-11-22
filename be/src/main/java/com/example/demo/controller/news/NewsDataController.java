@@ -2,17 +2,14 @@ package com.example.demo.controller.news;
 
 import com.example.demo.client.newsdata.model.NewsDataResponse;
 import com.example.demo.client.newsdata.service.NewsDataRestClient;
-import com.example.demo.entity.User;
-import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuditService;
 import com.example.demo.service.FeatureFlagService;
+import com.example.demo.util.ControllerHelper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -27,21 +24,12 @@ public class NewsDataController {
 
     private final NewsDataRestClient newsDataRestClient;
     private final AuditService auditService;
-    private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final FeatureFlagService featureFlagService;
+    private final ControllerHelper controllerHelper;
 
     private UUID getCurrentUserId() {
-        try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
-                String email = auth.getName();
-                return userRepository.findByEmail(email).map(User::getId).orElse(null);
-            }
-        } catch (Exception e) {
-            log.debug("Could not get current user", e);
-        }
-        return null;
+        return controllerHelper.getCurrentUserId();
     }
 
     @GetMapping("/crypto")

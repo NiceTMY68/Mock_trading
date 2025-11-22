@@ -20,20 +20,13 @@ public class AuditLoggingHelper {
     public AuditContext start(String endpoint, UUID userId, JsonNode normalizedParams) {
         UUID requestId = UUID.randomUUID();
         long startTime = System.currentTimeMillis();
-        auditService.logRequest(requestId, userId, endpoint, normalizedParams);
+        auditService.start(requestId, userId, endpoint, normalizedParams);
         return new AuditContext(requestId, startTime, endpoint);
     }
 
-    public void finishSuccess(AuditContext ctx, String provider, JsonNode providerMeta) {
+    public void finish(AuditContext ctx, String provider, boolean cached, JsonNode providerMeta, int statusCode) {
         long latencyMs = System.currentTimeMillis() - ctx.startTime();
-        auditService.finishRequest(ctx.requestId(), false, provider, providerMeta, latencyMs);
-    }
-
-    public void finishError(AuditContext ctx, String provider, String errorMessage) {
-        long latencyMs = System.currentTimeMillis() - ctx.startTime();
-        auditService.finishRequest(ctx.requestId(), false, provider,
-                com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode().put("error", errorMessage),
-                latencyMs);
+        auditService.finish(ctx.requestId(), provider, cached, providerMeta, latencyMs, statusCode);
     }
 
     public ResponseEntity<Map<String, Object>> ok(AuditContext ctx, Object data) {
@@ -44,7 +37,24 @@ public class AuditLoggingHelper {
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<Map<String, Object>> error(AuditContext ctx, String errorMessage, HttpStatus status) {
+    public ResponseEntity<Map<String, Object>> ok(AuditContext ctx, Object data, String provider, boolean cached, JsonNode providerMeta) {
+        finish(ctx, provider, cached, providerMeta, HttpStatus.OK.value());
+        return ok(ctx, data);
+    }
+
+    public ResponseEntity<Map<String, Object>> okWithExtra(AuditContext ctx, Object data, Map<String, Object> extraFields, String provider, boolean cached, JsonNode providerMeta) {
+        finish(ctx, provider, cached, providerMeta, HttpStatus.OK.value());
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("requestId", ctx.requestId().toString());
+        response.put("data", data);
+        response.putAll(extraFields);
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<Map<String, Object>> error(AuditContext ctx, String errorMessage, HttpStatus status, String provider) {
+        JsonNode errorMeta = com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode().put("error", errorMessage);
+        finish(ctx, provider, false, errorMeta, status.value());
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
         response.put("requestId", ctx.requestId().toString());
@@ -54,5 +64,3 @@ public class AuditLoggingHelper {
 
     public record AuditContext(UUID requestId, long startTime, String endpoint) {}
 }
-
-

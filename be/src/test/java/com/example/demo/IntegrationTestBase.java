@@ -1,6 +1,5 @@
 package com.example.demo;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -19,27 +18,31 @@ public abstract class IntegrationTestBase {
         DockerImageName.parse("postgres:15-alpine"))
         .withDatabaseName("testdb")
         .withUsername("testuser")
-        .withPassword("testpass");
+        .withPassword("testpass")
+        .withReuse(true);
     
     @Container
     static final GenericContainer<?> redisContainer = new GenericContainer<>(
         DockerImageName.parse("redis:7-alpine"))
-        .withExposedPorts(6379);
+        .withExposedPorts(6379)
+        .withReuse(true);
     
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
         registry.add("spring.datasource.username", postgresContainer::getUsername);
         registry.add("spring.datasource.password", postgresContainer::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
         
         registry.add("spring.data.redis.host", redisContainer::getHost);
         registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
-    }
-    
-    @BeforeAll
-    static void beforeAll() {
-        postgresContainer.start();
-        redisContainer.start();
+        
+        // Disable Flyway for integration tests (use Hibernate DDL instead)
+        registry.add("spring.flyway.enabled", () -> "false");
+        
+        // Override JPA settings for PostgreSQL - use create-drop for tests
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
     }
 }
 

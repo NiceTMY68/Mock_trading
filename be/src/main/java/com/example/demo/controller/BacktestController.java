@@ -2,10 +2,10 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.BacktestRequest;
 import com.example.demo.dto.BacktestResult;
-import com.example.demo.entity.User;
-import com.example.demo.repository.UserRepository;
 import com.example.demo.service.BacktestService;
 import com.example.demo.util.AuditLoggingHelper;
+import com.example.demo.util.ControllerHelper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -17,8 +17,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -31,21 +29,12 @@ import java.util.UUID;
 public class BacktestController {
     
     private final BacktestService backtestService;
-    private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final AuditLoggingHelper auditLoggingHelper;
+    private final ControllerHelper controllerHelper;
     
     private UUID getCurrentUserId() {
-        try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
-                String email = auth.getName();
-                return userRepository.findByEmail(email).map(User::getId).orElse(null);
-            }
-        } catch (Exception e) {
-            log.debug("Could not get current user", e);
-        }
-        return null;
+        return controllerHelper.getCurrentUserId();
     }
     
     @Operation(
@@ -74,16 +63,14 @@ public class BacktestController {
         try {
             UUID userId = getCurrentUserId();
             BacktestResult result = backtestService.runBacktest(request, userId);
-            auditLoggingHelper.finishSuccess(ctx, "backtest", 
-                objectMapper.createObjectNode()
+            JsonNode providerMeta = objectMapper.createObjectNode()
                     .put("symbol", result.getSymbol())
                     .put("totalTrades", result.getTotalTrades())
-                    .put("returnPercent", result.getReturnPercent().toString()));
-            return auditLoggingHelper.ok(ctx, result);
+                    .put("returnPercent", result.getReturnPercent().toString());
+            return auditLoggingHelper.ok(ctx, result, "backtest", false, providerMeta);
         } catch (Exception e) {
             log.error("Error running backtest: {}", e.getMessage(), e);
-            auditLoggingHelper.finishError(ctx, "backtest", e.getMessage());
-            return auditLoggingHelper.error(ctx, e.getMessage(), org.springframework.http.HttpStatus.BAD_REQUEST);
+            return auditLoggingHelper.error(ctx, e.getMessage(), org.springframework.http.HttpStatus.BAD_REQUEST, "backtest");
         }
     }
 }

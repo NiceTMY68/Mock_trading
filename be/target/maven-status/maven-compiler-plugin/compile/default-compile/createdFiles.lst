@@ -13,6 +13,7 @@ com\example\demo\client\binance\service\BinanceMessageHandler.class
 com\example\demo\entity\Holding$HoldingBuilder.class
 com\example\demo\dto\KlineParams$KlineParamsBuilder.class
 com\example\demo\entity\WatchlistItem$WatchlistItemBuilder.class
+com\example\demo\controller\AuthController.class
 com\example\demo\repository\HoldingRepository.class
 com\example\demo\client\newsdata\config\NewsDataProperties.class
 com\example\demo\entity\Portfolio.class
@@ -26,11 +27,11 @@ com\example\demo\entity\Subscription$SubscriptionBuilder.class
 com\example\demo\entity\Order$OrderType.class
 com\example\demo\client\binance\config\BinanceProperties$Streams.class
 com\example\demo\repository\PortfolioRepository.class
+com\example\demo\service\impl\AuditServiceImpl.class
 com\example\demo\service\BacktestService$TradeSimulation.class
 com\example\demo\client\binance\service\BinanceWebSocketClient.class
 com\example\demo\exception\BadRequestException.class
 com\example\demo\controller\news\NewsDataController.class
-com\example\demo\service\OrderService.class
 com\example\demo\config\SecurityConfig.class
 com\example\demo\dto\RegisterDto$RegisterDtoBuilder.class
 com\example\demo\entity\Notification$NotificationBuilder.class
@@ -78,6 +79,7 @@ com\example\demo\client\binance\service\BinanceRestClient$5.class
 com\example\demo\dto\OrderResponse$OrderResponseBuilder.class
 com\example\demo\controller\AlertController.class
 com\example\demo\repository\WatchlistRepository.class
+com\example\demo\config\SecurityConfig$1.class
 com\example\demo\entity\User$UserBuilder.class
 com\example\demo\config\RateLimiterConfig.class
 com\example\demo\repository\BacktestRepository.class
@@ -105,6 +107,7 @@ com\example\demo\entity\RequestLog.class
 com\example\demo\security\RateLimitInterceptor.class
 com\example\demo\service\WatchlistService.class
 com\example\demo\controller\WebhookController.class
+com\example\demo\config\DataSeeder.class
 com\example\demo\client\newsdata\service\NewsDataRestClient.class
 com\example\demo\util\ParamNormalizer.class
 com\example\demo\dto\RegisterDto.class

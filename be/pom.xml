@@ -202,6 +202,21 @@
 					</excludes>
 				</configuration>
 			</plugin>
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-surefire-plugin</artifactId>
+			<version>3.2.5</version>
+			<configuration>
+				<useSystemClassLoader>false</useSystemClassLoader>
+				<includes>
+					<include>**/*Test.java</include>
+					<include>**/*Tests.java</include>
+				</includes>
+				<classpathDependencyExcludes>
+					<exclude>org.springframework.boot:spring-boot-devtools</exclude>
+				</classpathDependencyExcludes>
+			</configuration>
+		</plugin>
 		</plugins>
 	</build>
 

@@ -46,6 +46,9 @@ public class RequestLog {
     @Column(nullable = true)
     private Long latencyMs;
 
+    @Column(nullable = true)
+    private Integer statusCode;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 

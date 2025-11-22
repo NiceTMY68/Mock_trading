@@ -1,9 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.Alert;
-import com.example.demo.entity.User;
-import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AlertService;
+import com.example.demo.util.ControllerHelper;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -11,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -26,7 +24,7 @@ import java.util.UUID;
 public class AlertController {
 
     private final AlertService alertService;
-    private final UserRepository userRepository;
+    private final ControllerHelper controllerHelper;
 
     @GetMapping
     public ResponseEntity<?> list(Authentication authentication) {
@@ -50,10 +48,7 @@ public class AlertController {
     }
 
     private UUID getCurrentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
-        User user = userRepository.findByEmail(email).orElseThrow();
-        return user.getId();
+        return controllerHelper.getCurrentUserId();
     }
 
     @Data

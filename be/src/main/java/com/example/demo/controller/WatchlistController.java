@@ -1,14 +1,12 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.User;
 import com.example.demo.entity.WatchlistItem;
-import com.example.demo.repository.UserRepository;
 import com.example.demo.service.WatchlistService;
+import com.example.demo.util.ControllerHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +20,7 @@ import java.util.UUID;
 public class WatchlistController {
 
     private final WatchlistService watchlistService;
-    private final UserRepository userRepository;
+    private final ControllerHelper controllerHelper;
 
     @GetMapping
     public ResponseEntity<?> getWatchlist(Authentication authentication) {
@@ -47,9 +45,6 @@ public class WatchlistController {
     }
 
     private UUID getCurrentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
-        User user = userRepository.findByEmail(email).orElseThrow();
-        return user.getId();
+        return controllerHelper.getCurrentUserId();
     }
 }
