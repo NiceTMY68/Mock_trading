@@ -129,4 +129,7 @@ public class UsageService {
     public List<UsageMetric> getMetricHistory(String metricKey) {
         return usageMetricRepository.findByMetricKeyOrderByCreatedAtDesc(metricKey);
     }
+    
+    // TODO: Implement DB retention policy - delete usage metrics older than configured retention period
+    // Consider: scheduled job to cleanup old metrics, configurable retention days in application.properties
 }
