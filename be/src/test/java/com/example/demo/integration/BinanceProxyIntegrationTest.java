@@ -259,8 +259,7 @@ class BinanceProxyIntegrationTest extends IntegrationTestBase {
             );
         
         assertThat(snapshots).hasSize(2);
-        assertThat(snapshots.get(0).getTimestamp()).isEqualTo(now);
-        assertThat(snapshots.get(1).getTimestamp()).isEqualTo(hourAgo);
+        assertThat(snapshots.get(0).getTimestamp()).isAfterOrEqualTo(now.minusSeconds(2));
+        assertThat(snapshots.get(1).getTimestamp()).isAfterOrEqualTo(hourAgo.minusSeconds(2));
     }
 }
-

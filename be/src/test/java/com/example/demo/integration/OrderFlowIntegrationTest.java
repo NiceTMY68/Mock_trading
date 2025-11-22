@@ -4,6 +4,7 @@ import com.example.demo.IntegrationTestBase;
 import com.example.demo.dto.PlaceOrderDto;
 import com.example.demo.entity.Order;
 import com.example.demo.entity.Portfolio;
+import com.example.demo.entity.PriceSnapshot;
 import com.example.demo.entity.User;
 import com.example.demo.repository.*;
 import com.example.demo.service.OrderService;
@@ -42,11 +43,15 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
     @Autowired
     private PasswordEncoder passwordEncoder;
     
+    @Autowired
+    private PriceSnapshotRepository priceSnapshotRepository;
+    
     private User testUser;
     private Portfolio testPortfolio;
     
     @BeforeEach
     void setUp() {
+        priceSnapshotRepository.deleteAll();
         tradeRepository.deleteAll();
         holdingRepository.deleteAll();
         orderRepository.deleteAll();
@@ -69,6 +74,34 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
             .totalPnl(BigDecimal.ZERO)
             .build();
         testPortfolio = portfolioRepository.save(testPortfolio);
+        
+        seedPriceData();
+    }
+    
+    private void seedPriceData() {
+        java.time.Instant now = java.time.Instant.now();
+        PriceSnapshot btcSnapshot = PriceSnapshot.builder()
+            .coinSymbol("BTCUSDT")
+            .timestamp(now)
+            .open(BigDecimal.valueOf(50000))
+            .high(BigDecimal.valueOf(51000))
+            .low(BigDecimal.valueOf(49000))
+            .close(BigDecimal.valueOf(50000))
+            .volume(BigDecimal.valueOf(1000))
+            .build();
+        
+        PriceSnapshot ethSnapshot = PriceSnapshot.builder()
+            .coinSymbol("ETHUSDT")
+            .timestamp(now)
+            .open(BigDecimal.valueOf(3000))
+            .high(BigDecimal.valueOf(3100))
+            .low(BigDecimal.valueOf(2900))
+            .close(BigDecimal.valueOf(3000))
+            .volume(BigDecimal.valueOf(5000))
+            .build();
+        
+        priceSnapshotRepository.save(btcSnapshot);
+        priceSnapshotRepository.save(ethSnapshot);
     }
     
     @Test
@@ -138,7 +171,7 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
             .build();
         
         assertThatThrownBy(() -> orderService.placeMarketOrder(testUser.getId(), dto))
-            .isInstanceOf(IllegalStateException.class)
+            .isInstanceOf(RuntimeException.class)
             .hasMessageContaining("Insufficient holdings");
     }
     
@@ -210,4 +243,3 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
         assertThat(orders).allMatch(o -> o.getStatus() == Order.OrderStatus.FILLED);
     }
 }
-

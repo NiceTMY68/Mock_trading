@@ -1,0 +1,14 @@
+-------------------------------------------------------------------------------
+Test set: com.example.demo.integration.BinanceProxyIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 10.69 s <<< FAILURE! -- in com.example.demo.integration.BinanceProxyIntegrationTest
+com.example.demo.integration.BinanceProxyIntegrationTest.priceSnapshotPersistence_ShouldQueryByTimeRange -- Time elapsed: 0.027 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 2025-11-22T20:12:55.273952200Z
+ but was: 2025-11-22T20:12:55.273952Z
+	at com.example.demo.integration.BinanceProxyIntegrationTest.priceSnapshotPersistence_ShouldQueryByTimeRange(BinanceProxyIntegrationTest.java:262)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
