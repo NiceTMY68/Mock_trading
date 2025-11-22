@@ -41,30 +41,24 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, 
                              @NonNull Object handler) throws Exception {
         
-        // Skip rate limiting for auth endpoints
         String path = request.getRequestURI();
         if (path.startsWith("/api/auth/")) {
             return true;
         }
         
-        // Get user identifier and tier
         String userIdentifier = getUserIdentifier(request);
         String userTier = getUserTier();
         
-        // Get rate limit rule for user tier
         RateLimiterConfig.RateLimitRule rule = rateLimitRules.getOrDefault(userTier, 
                 rateLimitRules.get("ANONYMOUS"));
         
-        // Check rate limit
         boolean allowed = checkRateLimit(userIdentifier, rule);
         
         if (!allowed) {
-            // Rate limit exceeded - return 429
             handleRateLimitExceeded(response, userIdentifier, rule);
             return false;
         }
         
-        // Add rate limit headers to response
         addRateLimitHeaders(response, userIdentifier, rule);
         
         return true;
@@ -80,7 +74,6 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         long now = System.currentTimeMillis();
         
         try {
-            // Get current tokens and last refill time
             String tokensStr = rateLimiterRedisTemplate.opsForValue().get(tokensKey);
             String lastRefillStr = rateLimiterRedisTemplate.opsForValue().get(lastRefillKey);
             
@@ -88,7 +81,6 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             long lastRefillTime;
             
             if (tokensStr == null || lastRefillStr == null) {
-                // Initialize bucket
                 currentTokens = rule.getBucketSize();
                 lastRefillTime = now;
             } else {
@@ -96,27 +88,19 @@ public class RateLimitInterceptor implements HandlerInterceptor {
                 lastRefillTime = Long.parseLong(lastRefillStr);
             }
             
-            // Calculate tokens to add based on time elapsed
             double secondsElapsed = (now - lastRefillTime) / 1000.0;
             double tokensToAdd = secondsElapsed * rule.getRefillRate();
-            
-            // Refill tokens (capped at bucket size)
             currentTokens = Math.min(currentTokens + tokensToAdd, rule.getBucketSize());
             
-            // Check if we have at least 1 token
             if (currentTokens >= 1.0) {
-                // Consume 1 token
                 currentTokens -= 1.0;
                 
-                // Update Redis
                 rateLimiterRedisTemplate.opsForValue().set(tokensKey, String.valueOf(currentTokens), 2, TimeUnit.MINUTES);
                 rateLimiterRedisTemplate.opsForValue().set(lastRefillKey, String.valueOf(now), 2, TimeUnit.MINUTES);
                 
                 log.debug("Rate limit check passed for {}: {} tokens remaining", userIdentifier, currentTokens);
                 return true;
             } else {
-                // No tokens available
-                // Update last refill time but don't consume
                 rateLimiterRedisTemplate.opsForValue().set(tokensKey, String.valueOf(currentTokens), 2, TimeUnit.MINUTES);
                 rateLimiterRedisTemplate.opsForValue().set(lastRefillKey, String.valueOf(now), 2, TimeUnit.MINUTES);
                 
@@ -126,7 +110,6 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             
         } catch (Exception e) {
             log.error("Error checking rate limit for {}: {}", userIdentifier, e.getMessage(), e);
-            // On error, allow the request (fail open)
             return true;
         }
     }
@@ -151,11 +134,9 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             double currentTokens = Double.parseDouble(tokensStr);
             long lastRefillTime = Long.parseLong(lastRefillStr);
             
-            // Calculate tokens to add
             double secondsElapsed = (now - lastRefillTime) / 1000.0;
             double tokensToAdd = secondsElapsed * rule.getRefillRate();
             
-            // Return current tokens (capped at bucket size)
             return Math.min(currentTokens + tokensToAdd, rule.getBucketSize());
             
         } catch (Exception e) {
@@ -171,10 +152,9 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         
         if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
-            return auth.getName(); // User email
+            return auth.getName();
         }
         
-        // For anonymous users, use IP address
         String ipAddress = request.getHeader("X-Forwarded-For");
         if (ipAddress == null || ipAddress.isEmpty()) {
             ipAddress = request.getRemoteAddr();

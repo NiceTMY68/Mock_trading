@@ -48,21 +48,18 @@ public class RateLimiterConfig {
     public Map<String, RateLimitRule> rateLimitRules() {
         Map<String, RateLimitRule> rules = new HashMap<>();
         
-        // Anonymous users (no auth)
         rules.put("ANONYMOUS", RateLimitRule.builder()
                 .requestsPerMinute(anonymousRequestsPerMinute)
                 .bucketSize(anonymousRequestsPerMinute * bucketSizeMultiplier)
-                .refillRate(anonymousRequestsPerMinute / 60.0) // tokens per second
+                .refillRate(anonymousRequestsPerMinute / 60.0)
                 .build());
         
-        // Free tier users
         rules.put("USER", RateLimitRule.builder()
                 .requestsPerMinute(freeRequestsPerMinute)
                 .bucketSize(freeRequestsPerMinute * bucketSizeMultiplier)
                 .refillRate(freeRequestsPerMinute / 60.0)
                 .build());
         
-        // Pro tier users
         rules.put("PRO", RateLimitRule.builder()
                 .requestsPerMinute(proRequestsPerMinute)
                 .bucketSize(proRequestsPerMinute * bucketSizeMultiplier)
