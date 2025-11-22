@@ -33,10 +33,10 @@ public class BillingService {
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
     
-    @Value("${stripe.secret-key}")
+    @Value("${stripe.secret-key:sk_test_dummy_key_for_testing_only}")
     private String stripeSecretKey;
     
-    @Value("${stripe.webhook-secret}")
+    @Value("${stripe.webhook-secret:whsec_test_dummy_webhook_secret_for_testing_only}")
     private String stripeWebhookSecret;
     
     @Value("${app.base-url:http://localhost:8080}")
@@ -44,7 +44,9 @@ public class BillingService {
     
     @PostConstruct
     public void init() {
-        Stripe.apiKey = stripeSecretKey;
+        if (stripeSecretKey != null && !stripeSecretKey.isEmpty()) {
+            Stripe.apiKey = stripeSecretKey;
+        }
     }
     
     public String createCheckoutSession(UUID userId, String planId, String successUrl, String cancelUrl) {

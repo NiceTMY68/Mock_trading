@@ -33,6 +33,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\cont
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\controller\WebhookController.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\DemoApplication.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\ApiResponseDto.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\AuthRequestDto.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\AuthResponseDto.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\BacktestRequest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\dto\BacktestResult.java

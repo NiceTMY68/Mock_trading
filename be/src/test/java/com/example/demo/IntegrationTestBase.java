@@ -43,6 +43,13 @@ public abstract class IntegrationTestBase {
         // Override JPA settings for PostgreSQL - use create-drop for tests
         registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        
+        // Disable HTTPS enforcement for tests
+        registry.add("security.require-ssl", () -> "false");
+        
+        // Add Stripe test keys
+        registry.add("stripe.secret-key", () -> "sk_test_dummy_key_for_testing_only");
+        registry.add("stripe.webhook-secret", () -> "whsec_test_dummy_webhook_secret_for_testing_only");
     }
 }
 

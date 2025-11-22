@@ -88,5 +88,15 @@ public class JwtUtil {
     public Instant getExpirationInstant(String token) {
         return getExpirationDate(token).toInstant();
     }
+
+    public String getUserId(String token) {
+        try {
+            Claims claims = getAllClaims(token);
+            String email = claims.getSubject();
+            return email;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
 

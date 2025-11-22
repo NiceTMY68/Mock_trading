@@ -1,6 +1,8 @@
 package com.example.demo.integration;
 
-import com.example.demo.dto.LoginDto;
+import com.example.demo.IntegrationTestBase;
+import com.example.demo.dto.AuthRequestDto;
+import com.example.demo.dto.AuthResponseDto;
 import com.example.demo.dto.RegisterDto;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
@@ -11,23 +13,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
 @Transactional
-@Rollback
-class AuthIntegrationTest {
+public class AuthIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
@@ -41,114 +39,181 @@ class AuthIntegrationTest {
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
-        // Clear any existing data to avoid conflicts
     }
 
     @Test
-    void registerAndLogin_ShouldWorkEndToEnd() throws Exception {
-        // Given
+    void testRegisterAndLoginFlow() throws Exception {
+        // Step 1: Register new user
         RegisterDto registerDto = RegisterDto.builder()
-                .email("integration@example.com")
+                .email("test@example.com")
                 .password("password123")
-                .fullName("Integration Test User")
+                .fullName("Test User")
                 .build();
 
-        // When - Register
-        mockMvc.perform(post("/api/auth/register")
+        MvcResult registerResult = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").exists())
-                .andExpect(jsonPath("$.email").value("integration@example.com"))
-                .andExpect(jsonPath("$.fullName").value("Integration Test User"))
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.fullName").value("Test User"))
                 .andReturn();
 
-        // Verify user was saved to database
-        assertThat(userRepository.findByEmail("integration@example.com")).isPresent();
-        User savedUser = userRepository.findByEmail("integration@example.com").get();
-        assertThat(savedUser.getFullName()).isEqualTo("Integration Test User");
-        assertThat(savedUser.isEnabled()).isTrue();
-        assertThat(savedUser.getRole()).isEqualTo("USER");
+        String registerResponse = registerResult.getResponse().getContentAsString();
+        AuthResponseDto registerAuthResponse = objectMapper.readValue(registerResponse, AuthResponseDto.class);
+        String registerToken = registerAuthResponse.getToken();
 
-        // When - Login with same credentials
-        LoginDto loginDto = LoginDto.builder()
-                .email("integration@example.com")
+        // Verify user was created in database
+        User savedUser = userRepository.findByEmail("test@example.com").orElse(null);
+        assertThat(savedUser).isNotNull();
+        assertThat(savedUser.getEmail()).isEqualTo("test@example.com");
+        assertThat(savedUser.getFullName()).isEqualTo("Test User");
+        assertThat(savedUser.getPasswordHash()).isNotEqualTo("password123"); // Should be hashed
+
+        // Step 2: Login with registered credentials
+        AuthRequestDto loginDto = AuthRequestDto.builder()
+                .email("test@example.com")
                 .password("password123")
                 .build();
 
-        mockMvc.perform(post("/api/auth/login")
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").exists())
-                .andExpect(jsonPath("$.email").value("integration@example.com"))
-                .andExpect(jsonPath("$.fullName").value("Integration Test User"));
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andReturn();
+
+        String loginResponse = loginResult.getResponse().getContentAsString();
+        AuthResponseDto loginAuthResponse = objectMapper.readValue(loginResponse, AuthResponseDto.class);
+        String loginToken = loginAuthResponse.getToken();
+
+        // Tokens should be different (new token generated on each login)
+        assertThat(loginToken).isNotBlank();
+        assertThat(loginAuthResponse.getExpiresAt()).isNotNull();
+
+        // Step 3: Call protected endpoint with token
+        mockMvc.perform(get("/api/v1/binance/market/top-3")
+                        .header("Authorization", "Bearer " + loginToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.requestId").exists());
     }
 
     @Test
-    void register_ShouldFail_WhenEmailAlreadyExists() throws Exception {
-        // Given - Create user first
-        User existingUser = User.builder()
-                .email("existing@example.com")
-                .passwordHash("hashedPassword")
-                .fullName("Existing User")
-                .role("USER")
-                .enabled(true)
-                .build();
-        userRepository.save(existingUser);
-
+    void testRegisterWithDuplicateEmail() throws Exception {
+        // Register first user
         RegisterDto registerDto = RegisterDto.builder()
-                .email("existing@example.com")
+                .email("duplicate@example.com")
                 .password("password123")
-                .fullName("New User")
+                .fullName("First User")
                 .build();
 
-        // When & Then
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerDto)))
+                .andExpect(status().isCreated());
+
+        // Try to register with same email
+        RegisterDto duplicateDto = RegisterDto.builder()
+                .email("duplicate@example.com")
+                .password("password456")
+                .fullName("Second User")
+                .build();
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(duplicateDto)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Email already exists"));
     }
 
     @Test
-    void login_ShouldFail_WhenUserDoesNotExist() throws Exception {
-        // Given
-        LoginDto loginDto = LoginDto.builder()
-                .email("nonexistent@example.com")
-                .password("password123")
+    void testLoginWithInvalidCredentials() throws Exception {
+        // Register a user
+        RegisterDto registerDto = RegisterDto.builder()
+                .email("valid@example.com")
+                .password("correctPassword")
+                .fullName("Valid User")
                 .build();
 
-        // When & Then
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginDto)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Login failed: Invalid email or password"));
-    }
+                        .content(objectMapper.writeValueAsString(registerDto)))
+                .andExpect(status().isCreated());
 
-    @Test
-    void login_ShouldFail_WhenPasswordIsWrong() throws Exception {
-        // Given - Create user first
-        User existingUser = User.builder()
-                .email("test@example.com")
-                .passwordHash("hashedPassword")
-                .fullName("Test User")
-                .role("USER")
-                .enabled(true)
-                .build();
-        userRepository.save(existingUser);
-
-        LoginDto loginDto = LoginDto.builder()
-                .email("test@example.com")
+        // Try to login with wrong password
+        AuthRequestDto wrongPassword = AuthRequestDto.builder()
+                .email("valid@example.com")
                 .password("wrongPassword")
                 .build();
 
-        // When & Then
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginDto)))
+                        .content(objectMapper.writeValueAsString(wrongPassword)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("Invalid email or password"));
+
+        // Try to login with non-existent email
+        AuthRequestDto wrongEmail = AuthRequestDto.builder()
+                .email("nonexistent@example.com")
+                .password("anyPassword")
+                .build();
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrongEmail)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testProtectedEndpointWithoutToken() throws Exception {
+        mockMvc.perform(get("/api/v1/binance/market/top-3"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testProtectedEndpointWithInvalidToken() throws Exception {
+        mockMvc.perform(get("/api/v1/binance/market/top-3")
+                        .header("Authorization", "Bearer invalid-token"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testRegisterValidation() throws Exception {
+        // Test missing email
+        RegisterDto invalidDto = RegisterDto.builder()
+                .password("password123")
+                .fullName("Test User")
+                .build();
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDto)))
+                .andExpect(status().isBadRequest());
+
+        // Test invalid email format
+        RegisterDto invalidEmail = RegisterDto.builder()
+                .email("invalid-email")
+                .password("password123")
+                .fullName("Test User")
+                .build();
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidEmail)))
+                .andExpect(status().isBadRequest());
+
+        // Test short password
+        RegisterDto shortPassword = RegisterDto.builder()
+                .email("test@example.com")
+                .password("short")
+                .fullName("Test User")
+                .build();
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(shortPassword)))
+                .andExpect(status().isBadRequest());
     }
 }

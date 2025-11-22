@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.AuthRequestDto;
 import com.example.demo.dto.AuthResponseDto;
-import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.RegisterDto;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
@@ -95,14 +95,14 @@ public class AuthController {
         }
     )
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginDto loginDto) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequestDto authRequest) {
         try {
             // Find user by email
-            User user = userRepository.findByEmail(loginDto.getEmail())
+            User user = userRepository.findByEmail(authRequest.getEmail())
                     .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
             // Validate password
-            if (!passwordEncoder.matches(loginDto.getPassword(), user.getPasswordHash())) {
+            if (!passwordEncoder.matches(authRequest.getPassword(), user.getPasswordHash())) {
                 Map<String, String> error = new HashMap<>();
                 error.put("error", "Invalid email or password");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
