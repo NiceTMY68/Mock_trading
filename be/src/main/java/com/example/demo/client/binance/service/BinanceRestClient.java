@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -27,11 +29,24 @@ public class BinanceRestClient {
     private final ObjectMapper objectMapper;
     private final CacheService cacheService;
     private final PriceService priceService;
+    
+    @Autowired
+    private CacheConfig cacheConfig;
 
-    private static final String BINANCE_BASE_URL = "https://api.binance.com/api/v3";
-    private static final String EXCHANGE_INFO_URL = BINANCE_BASE_URL + "/exchangeInfo";
-    private static final String TICKER_24HR_URL = BINANCE_BASE_URL + "/ticker/24hr";
-    private static final String KLINES_URL = BINANCE_BASE_URL + "/klines";
+    @Value("${binance.api.base-url:https://api.binance.com/api/v3}")
+    private String binanceBaseUrl;
+    
+    private String getExchangeInfoUrl() {
+        return binanceBaseUrl + "/exchangeInfo";
+    }
+    
+    private String getTicker24hrUrl() {
+        return binanceBaseUrl + "/ticker/24hr";
+    }
+    
+    private String getKlinesUrl() {
+        return binanceBaseUrl + "/klines";
+    }
 
     public List<BinanceSymbolInfo> getAllSymbols() {
         String cacheKey = CacheKeyUtil.allSymbolsKey();
@@ -39,7 +54,7 @@ public class BinanceRestClient {
         return cacheService.get(cacheKey, new TypeReference<List<BinanceSymbolInfo>>() {})
                 .orElseGet(() -> {
                     try {
-                        String response = restTemplate.getForObject(EXCHANGE_INFO_URL, String.class);
+                        String response = restTemplate.getForObject(getExchangeInfoUrl(), String.class);
                         var exchangeInfo = objectMapper.readTree(response);
                         var symbols = exchangeInfo.get("symbols");
                         
@@ -47,7 +62,7 @@ public class BinanceRestClient {
                             objectMapper.treeToValue(symbols, BinanceSymbolInfo[].class)
                         );
 
-                        cacheService.put(cacheKey, symbolList, CacheConfig.SYMBOL_INFO_TTL);
+                        cacheService.put(cacheKey, symbolList, cacheConfig.getSymbolsTtl());
                         log.info("Fetched and cached {} symbols from Binance", symbolList.size());
                         
                         return symbolList;
@@ -65,12 +80,12 @@ public class BinanceRestClient {
         return cacheService.get(cacheKey, new TypeReference<List<BinanceTicker24hr>>() {})
                 .orElseGet(() -> {
                     try {
-                        String response = restTemplate.getForObject(TICKER_24HR_URL, String.class);
+                        String response = restTemplate.getForObject(getTicker24hrUrl(), String.class);
                         List<BinanceTicker24hr> tickerList = Arrays.asList(
                             objectMapper.readValue(response, BinanceTicker24hr[].class)
                         );
 
-                        cacheService.put(cacheKey, tickerList, CacheConfig.TICKER_TTL);
+                        cacheService.put(cacheKey, tickerList, cacheConfig.getTickerTtl());
                         log.info("Fetched and cached {} tickers from Binance", tickerList.size());
                         
                         return tickerList;
@@ -112,7 +127,7 @@ public class BinanceRestClient {
                             .limit(limit)
                             .toList();
                     
-                    cacheService.put(cacheKey, result, CacheConfig.MARKET_DATA_TTL);
+                    cacheService.put(cacheKey, result, cacheConfig.getMarketDataTtl());
                     return result;
                 });
     }
@@ -145,7 +160,7 @@ public class BinanceRestClient {
                             .limit(limit)
                             .toList();
                     
-                    cacheService.put(cacheKey, result, CacheConfig.MARKET_DATA_TTL);
+                    cacheService.put(cacheKey, result, cacheConfig.getMarketDataTtl());
                     return result;
                 });
     }
@@ -178,7 +193,7 @@ public class BinanceRestClient {
                             .limit(limit)
                             .toList();
                     
-                    cacheService.put(cacheKey, result, CacheConfig.MARKET_DATA_TTL);
+                    cacheService.put(cacheKey, result, cacheConfig.getMarketDataTtl());
                     return result;
                 });
     }
@@ -211,73 +226,70 @@ public class BinanceRestClient {
                             .limit(limit)
                             .toList();
                     
-                    cacheService.put(cacheKey, result, CacheConfig.MARKET_DATA_TTL);
+                    cacheService.put(cacheKey, result, cacheConfig.getMarketDataTtl());
                     return result;
                 });
     }
     
     public List<Object[]> getKlineData(String symbol, String interval, Long startTime, Long endTime, Integer limit) {
-        String cacheKey = CacheKeyUtil.klineKey(symbol, interval, startTime, endTime, limit);
+        String cacheKey = CacheKeyUtil.buildKlinesKey(symbol, interval, startTime, endTime, limit);
         
-        return cacheService.get(cacheKey, new TypeReference<List<Object[]>>() {})
-                .orElseGet(() -> {
-                    try {
-                        StringBuilder urlBuilder = new StringBuilder(KLINES_URL);
-                        urlBuilder.append("?symbol=").append(symbol.toUpperCase());
-                        urlBuilder.append("&interval=").append(interval);
-                        
-                        if (startTime != null) {
-                            urlBuilder.append("&startTime=").append(startTime);
-                        }
-                        if (endTime != null) {
-                            urlBuilder.append("&endTime=").append(endTime);
-                        }
-                        if (limit != null) {
-                            urlBuilder.append("&limit=").append(limit);
-                        }
-                        
-                        String url = urlBuilder.toString();
-                        String response = restTemplate.getForObject(url, String.class);
-                        
-                        JsonNode klinesArray = objectMapper.readTree(response);
-                        List<Object[]> klineData = new ArrayList<>();
-                        
-                        for (JsonNode klineNode : klinesArray) {
-                            Object[] kline = new Object[12];
-                            kline[0] = klineNode.get(0).asLong(); // openTime
-                            kline[1] = klineNode.get(1).asText(); // open
-                            kline[2] = klineNode.get(2).asText(); // high
-                            kline[3] = klineNode.get(3).asText(); // low
-                            kline[4] = klineNode.get(4).asText(); // close
-                            kline[5] = klineNode.get(5).asText(); // volume
-                            kline[6] = klineNode.get(6).asLong(); // closeTime
-                            kline[7] = klineNode.get(7).asText(); // quoteAssetVolume
-                            kline[8] = klineNode.get(8).asLong(); // numberOfTrades
-                            kline[9] = klineNode.get(9).asText(); // takerBuyBaseAssetVolume
-                            kline[10] = klineNode.get(10).asText(); // takerBuyQuoteAssetVolume
-                            kline[11] = klineNode.get(11).asText(); // ignore
-                            klineData.add(kline);
-                        }
-                        
-                        // Persist kline data as PriceSnapshots
-                        JsonNode rawMeta = objectMapper.createObjectNode()
-                                .put("symbol", symbol)
-                                .put("interval", interval)
-                                .put("startTime", startTime != null ? startTime.toString() : "null")
-                                .put("endTime", endTime != null ? endTime.toString() : "null")
-                                .put("limit", limit != null ? limit.toString() : "null");
-                        
-                        priceService.persistKlineData(symbol, klineData, rawMeta);
-                        
-                        cacheService.put(cacheKey, klineData, CacheConfig.KLINE_TTL);
-                        log.info("Fetched and cached {} klines for {} {}", klineData.size(), symbol, interval);
-                        
-                        return klineData;
-                        
-                    } catch (Exception e) {
-                        log.error("Error fetching kline data for {} {}: {}", symbol, interval, e.getMessage(), e);
-                        return List.of();
-                    }
-                });
+        try {
+            return cacheService.getOrFetch(cacheKey, () -> {
+                        StringBuilder urlBuilder = new StringBuilder(getKlinesUrl());
+                urlBuilder.append("?symbol=").append(symbol.toUpperCase());
+                urlBuilder.append("&interval=").append(interval);
+                
+                if (startTime != null) {
+                    urlBuilder.append("&startTime=").append(startTime);
+                }
+                if (endTime != null) {
+                    urlBuilder.append("&endTime=").append(endTime);
+                }
+                if (limit != null) {
+                    urlBuilder.append("&limit=").append(limit);
+                }
+                
+                String url = urlBuilder.toString();
+                String response = restTemplate.getForObject(url, String.class);
+                
+                JsonNode klinesArray = objectMapper.readTree(response);
+                List<Object[]> klineData = new ArrayList<>();
+                
+                for (JsonNode klineNode : klinesArray) {
+                    Object[] kline = new Object[12];
+                    kline[0] = klineNode.get(0).asLong(); // openTime
+                    kline[1] = klineNode.get(1).asText(); // open
+                    kline[2] = klineNode.get(2).asText(); // high
+                    kline[3] = klineNode.get(3).asText(); // low
+                    kline[4] = klineNode.get(4).asText(); // close
+                    kline[5] = klineNode.get(5).asText(); // volume
+                    kline[6] = klineNode.get(6).asLong(); // closeTime
+                    kline[7] = klineNode.get(7).asText(); // quoteAssetVolume
+                    kline[8] = klineNode.get(8).asLong(); // numberOfTrades
+                    kline[9] = klineNode.get(9).asText(); // takerBuyBaseAssetVolume
+                    kline[10] = klineNode.get(10).asText(); // takerBuyQuoteAssetVolume
+                    kline[11] = klineNode.get(11).asText(); // ignore
+                    klineData.add(kline);
+                }
+                
+                // Persist kline data as PriceSnapshots
+                JsonNode rawMeta = objectMapper.createObjectNode()
+                        .put("symbol", symbol)
+                        .put("interval", interval)
+                        .put("startTime", startTime != null ? startTime.toString() : "null")
+                        .put("endTime", endTime != null ? endTime.toString() : "null")
+                        .put("limit", limit != null ? limit.toString() : "null");
+                
+                priceService.persistKlineData(symbol, klineData, rawMeta);
+                
+                log.info("Fetched and cached {} klines for {} {}", klineData.size(), symbol, interval);
+                
+                return klineData;
+            }, cacheConfig.getKlinesTtl(), new TypeReference<List<Object[]>>() {});
+        } catch (Exception e) {
+            log.error("Error fetching kline data for {} {}: {}", symbol, interval, e.getMessage(), e);
+            return List.of();
+        }
     }
 }

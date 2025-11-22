@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 @Slf4j
 @Service
@@ -148,6 +149,56 @@ public class CacheService {
         } catch (Exception e) {
             log.error("Error clearing all cache", e);
         }
+    }
+    
+    /**
+     * Get value from cache, or fetch and cache if not present
+     * 
+     * @param key Cache key
+     * @param supplier Callable to fetch data if cache miss
+     * @param ttl Time to live for cached value
+     * @return Cached or freshly fetched value
+     * @throws Exception if supplier throws exception
+     */
+    public <T> T getOrFetch(String key, Callable<T> supplier, Duration ttl) throws Exception {
+        Optional<Object> cached = get(key, Object.class);
+        if (cached.isPresent()) {
+            log.debug("Cache hit for key: {}", key);
+            @SuppressWarnings("unchecked")
+            T value = (T) cached.get();
+            return value;
+        }
+        
+        log.debug("Cache miss for key: {}, fetching...", key);
+        T value = supplier.call();
+        
+        if (value != null) {
+            put(key, value, ttl);
+            log.debug("Fetched and cached value for key: {}", key);
+        }
+        
+        return value;
+    }
+    
+    /**
+     * Get value from cache with TypeReference, or fetch and cache if not present
+     */
+    public <T> T getOrFetch(String key, Callable<T> supplier, Duration ttl, TypeReference<T> typeReference) throws Exception {
+        Optional<T> cached = get(key, typeReference);
+        if (cached.isPresent()) {
+            log.debug("Cache hit for key: {}", key);
+            return cached.get();
+        }
+        
+        log.debug("Cache miss for key: {}, fetching...", key);
+        T value = supplier.call();
+        
+        if (value != null) {
+            put(key, value, ttl);
+            log.debug("Fetched and cached value for key: {}", key);
+        }
+        
+        return value;
     }
 }
 

@@ -9,6 +9,7 @@ import com.example.demo.util.CacheKeyUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -27,6 +28,9 @@ public class NewsDataRestClient {
     private final CacheService cacheService;
     private final NewsDataProperties properties;
     private final UsageService usageService;
+    
+    @Autowired
+    private CacheConfig cacheConfig;
 
     public NewsDataResponse getCryptoNews(Map<String, String> parameters) {
         return getCryptoNews(parameters, null);
@@ -38,8 +42,23 @@ public class NewsDataRestClient {
         Integer page = parameters.containsKey("page") ? Integer.parseInt(parameters.get("page")) : null;
         String cacheKey = CacheKeyUtil.cryptoNewsKey(from, to, page);
         
-        return cacheService.get(cacheKey, NewsDataResponse.class)
-                .orElseGet(() -> fetchAndCache("crypto", cacheKey, parameters, userId));
+        try {
+            return cacheService.getOrFetch(cacheKey, () -> {
+                NewsDataResponse newsData = fetchNews("crypto", parameters, userId);
+                
+                int articleCount = newsData != null && newsData.getResults() != null ? 
+                    newsData.getResults().size() : 0;
+                
+                usageService.increment(UsageService.NEWS_API_CALLS, userId, 1, "crypto");
+                usageService.increment(UsageService.NEWS_API_ARTICLES, userId, articleCount, "crypto");
+                
+                log.info("Fetched and cached crypto news: {} articles", articleCount);
+                return newsData;
+            }, cacheConfig.getNewsTtl());
+        } catch (Exception e) {
+            log.error("Error fetching crypto news: {}", e.getMessage(), e);
+            return null;
+        }
     }
 
     public NewsDataResponse getNews(String endpoint, Map<String, String> parameters) {
@@ -54,12 +73,26 @@ public class NewsDataRestClient {
                        Integer.parseInt(parameters.get("page")) : null;
         String cacheKey = CacheKeyUtil.newsKey(query, from, to, page);
         
-        return cacheService.get(cacheKey, NewsDataResponse.class)
-                .orElseGet(() -> fetchAndCache(endpoint, cacheKey, parameters, userId));
+        try {
+            return cacheService.getOrFetch(cacheKey, () -> {
+                NewsDataResponse newsData = fetchNews(endpoint, parameters, userId);
+                
+                int articleCount = newsData != null && newsData.getResults() != null ? 
+                    newsData.getResults().size() : 0;
+                
+                usageService.increment(UsageService.NEWS_API_CALLS, userId, 1, endpoint);
+                usageService.increment(UsageService.NEWS_API_ARTICLES, userId, articleCount, endpoint);
+                
+                log.info("Fetched and cached {} news: {} articles", endpoint, articleCount);
+                return newsData;
+            }, cacheConfig.getNewsTtl());
+        } catch (Exception e) {
+            log.error("Error fetching news from {}: {}", endpoint, e.getMessage(), e);
+            return null;
+        }
     }
     
-    private NewsDataResponse fetchAndCache(String endpoint, String cacheKey, 
-                                           Map<String, String> parameters, UUID userId) {
+    private NewsDataResponse fetchNews(String endpoint, Map<String, String> parameters, UUID userId) {
         try {
             UriComponentsBuilder builder = UriComponentsBuilder
                     .fromUriString(properties.getBaseUrl() + "/" + endpoint)
@@ -70,18 +103,7 @@ public class NewsDataRestClient {
             }
             
             String response = restTemplate.getForObject(builder.toUriString(), String.class);
-            NewsDataResponse newsData = objectMapper.readValue(response, NewsDataResponse.class);
-            
-            cacheService.put(cacheKey, newsData, CacheConfig.NEWS_TTL);
-            
-            int articleCount = newsData != null && newsData.getResults() != null ? 
-                newsData.getResults().size() : 0;
-            
-            usageService.increment(UsageService.NEWS_API_CALLS, userId, 1, endpoint);
-            usageService.increment(UsageService.NEWS_API_ARTICLES, userId, articleCount, endpoint);
-            
-            log.info("Fetched and cached {} news: {} articles", endpoint, articleCount);
-            return newsData;
+            return objectMapper.readValue(response, NewsDataResponse.class);
             
         } catch (Exception e) {
             log.error("Error fetching news from {}: {}", endpoint, e.getMessage(), e);

@@ -12,6 +12,10 @@ public class CacheKeyUtil {
     private static final String BINANCE_PREFIX = "binance";
     private static final String NEWS_PREFIX = "news";
     
+    public static String buildKlinesKey(String symbol, String interval, Long start, Long end, Integer limit) {
+        return klineKey(symbol, interval, start, end, limit);
+    }
+    
     public static String klineKey(String symbol, String interval, Long startTime, Long endTime, Integer limit) {
         StringBuilder key = new StringBuilder(BINANCE_PREFIX)
                 .append(SEPARATOR).append("klines")
