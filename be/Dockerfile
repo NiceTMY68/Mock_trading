@@ -7,10 +7,12 @@ RUN mvn clean package -DskipTests -B
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-RUN apk add --no-cache curl
-RUN addgroup -S spring && adduser -S spring -G spring
-COPY --from=build /app/target/*.jar app.jar
-RUN chown spring:spring app.jar
+RUN apk add --no-cache curl && \
+    addgroup -S spring && \
+    adduser -S spring -G spring && \
+    mkdir -p /app && \
+    chown -R spring:spring /app
+COPY --from=build --chown=spring:spring /app/target/*.jar app.jar
 USER spring:spring
 EXPOSE 8080
 
