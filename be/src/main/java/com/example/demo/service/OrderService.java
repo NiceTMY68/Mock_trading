@@ -374,20 +374,17 @@ public class OrderService {
     private void fillLimitOrder(Order order, BigDecimal fillPrice) {
         log.info("Filling limit order {} at price {}", order.getOrderId(), fillPrice);
         
-        BigDecimal commission = order.getTotalAmount().multiply(COMMISSION_RATE);
-        
         order.setStatus(Order.OrderStatus.FILLED);
         order.setFilledQuantity(order.getQuantity());
         order.setAveragePrice(fillPrice);
         order.setUpdatedAt(Instant.now());
-        
         orderRepository.save(order);
         
-        Trade trade = createTrade(order, fillPrice, commission);
-        tradeRepository.save(trade);
-        
-        updateHoldingsAndPortfolio(order.getUserId(), order.getSymbol(), order.getSide(), 
-                                 order.getQuantity(), fillPrice, commission);
+        if (order.getSide() == Order.OrderSide.BUY) {
+            applyBuy(order, fillPrice);
+        } else {
+            applySell(order, fillPrice);
+        }
         
         log.info("Successfully filled limit order {} for user {}", order.getOrderId(), order.getUserId());
     }

@@ -13,7 +13,7 @@ public class LimitOrderMatcherScheduler {
     
     private final OrderService orderService;
     
-    @Scheduled(fixedDelayString = "${app.limit.order.matcher.delay:5000}")
+    @Scheduled(fixedDelayString = "${app.limit.matcher.delay:5000}")
     public void processPendingLimitOrders() {
         try {
             orderService.processPendingLimitOrders();
