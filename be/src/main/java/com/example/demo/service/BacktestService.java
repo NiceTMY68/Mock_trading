@@ -6,7 +6,6 @@ import com.example.demo.entity.Backtest;
 import com.example.demo.entity.PriceSnapshot;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.repository.BacktestRepository;
-import com.example.demo.repository.PriceSnapshotRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,7 @@ public class BacktestService {
     @org.springframework.beans.factory.annotation.Value("${app.backtest.max-range-days:365}")
     private int maxRangeDays;
     
-    private final PriceSnapshotRepository priceSnapshotRepository;
+    private final PriceService priceService;
     private final BacktestRepository backtestRepository;
     private final ObjectMapper objectMapper;
     
@@ -92,8 +91,7 @@ public class BacktestService {
     }
     
     private List<PriceSnapshot> loadSnapshots(String symbol, Instant start, Instant end) {
-        List<PriceSnapshot> snapshots = priceSnapshotRepository
-            .findByCoinSymbolAndTimestampBetweenOrderByTimestampDesc(symbol.toUpperCase(), start, end);
+        List<PriceSnapshot> snapshots = priceService.getSnapshots(symbol, start, end);
         
         if (snapshots.isEmpty()) {
             throw new BadRequestException(
@@ -297,4 +295,3 @@ public class BacktestService {
         List<BigDecimal> equityCurve
     ) {}
 }
-
