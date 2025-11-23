@@ -3,6 +3,7 @@ package com.example.demo.scheduler;
 import com.example.demo.service.AlertService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ public class AlertCheckerScheduler {
     private final AlertService alertService;
 
     @Scheduled(fixedDelayString = "${app.alert.checker.delay:60000}")
+    @SchedulerLock(name = "alertChecker", lockAtMostFor = "PT60S", lockAtLeastFor = "PT5S")
     public void processAlerts() {
         try {
             alertService.processActiveAlerts();
