@@ -38,6 +38,10 @@ public class BillingService {
     
     @Value("${stripe.webhook-secret:whsec_test_dummy_webhook_secret_for_testing_only}")
     private String stripeWebhookSecret;
+
+    public String getWebhookSecret() {
+        return stripeWebhookSecret;
+    }
     
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -83,10 +87,13 @@ public class BillingService {
         }
     }
     
-    public void handleStripeWebhook(String payload, String sigHeader) {
+    public void handleStripeWebhook(String payload, String sigHeader) throws SignatureVerificationException {
+        Event event = Webhook.constructEvent(payload, sigHeader, stripeWebhookSecret);
+        handleStripeEvent(event);
+    }
+
+    public void handleStripeEvent(Event event) {
         try {
-            Event event = Webhook.constructEvent(payload, sigHeader, stripeWebhookSecret);
-            
             log.info("Received Stripe webhook: {} - {}", event.getType(), event.getId());
             
             switch (event.getType()) {
@@ -99,9 +106,6 @@ public class BillingService {
                 default -> log.debug("Unhandled event type: {}", event.getType());
             }
             
-        } catch (SignatureVerificationException e) {
-            log.error("Invalid webhook signature: {}", e.getMessage());
-            throw new RuntimeException("Invalid webhook signature", e);
         } catch (Exception e) {
             log.error("Error processing webhook: {}", e.getMessage(), e);
             throw new RuntimeException("Error processing webhook", e);

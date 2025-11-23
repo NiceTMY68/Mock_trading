@@ -75,7 +75,7 @@ class BillingServiceTest {
     }
     
     @Test
-    void handleStripeWebhook_ShouldProcessCheckoutSessionCompleted_WhenValidSignature() {
+    void handleStripeWebhook_ShouldProcessCheckoutSessionCompleted_WhenValidSignature() throws SignatureVerificationException {
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
             Event mockEvent = mock(Event.class);
             when(mockEvent.getType()).thenReturn("checkout.session.completed");
@@ -87,7 +87,7 @@ class BillingServiceTest {
             metadata.put("planId", "pro");
             when(mockSession.getMetadata()).thenReturn(metadata);
             
-            var deserializer = mock(mockEvent.getDataObjectDeserializer().getClass());
+            var deserializer = mock(com.stripe.model.EventDataObjectDeserializer.class);
             when(deserializer.getObject()).thenReturn(Optional.of(mockSession));
             when(mockEvent.getDataObjectDeserializer()).thenReturn(deserializer);
             
@@ -97,6 +97,8 @@ class BillingServiceTest {
             when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
             when(subscriptionRepository.findByStripeCustomerId(anyString())).thenReturn(Optional.empty());
             
+            // Method throws SignatureVerificationException but mock doesn't throw it
+            // Adding throws to method signature would require changing all test methods
             billingService.handleStripeWebhook(testPayload, testSigHeader);
             
             verify(mockEvent, times(1)).getType();
@@ -104,7 +106,7 @@ class BillingServiceTest {
     }
     
     @Test
-    void handleStripeWebhook_ShouldCreateSubscription_WhenCheckoutSessionCompleted() {
+    void handleStripeWebhook_ShouldCreateSubscription_WhenCheckoutSessionCompleted() throws SignatureVerificationException {
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
             Event mockEvent = mock(Event.class);
             when(mockEvent.getType()).thenReturn("checkout.session.completed");
@@ -128,6 +130,8 @@ class BillingServiceTest {
             when(subscriptionRepository.findByStripeCustomerId("cus_test")).thenReturn(Optional.empty());
             when(subscriptionRepository.save(any(Subscription.class))).thenAnswer(invocation -> invocation.getArgument(0));
             
+            // Method throws SignatureVerificationException but mock doesn't throw it
+            // Adding throws to method signature would require changing all test methods
             billingService.handleStripeWebhook(testPayload, testSigHeader);
             
             verify(subscriptionRepository, atLeastOnce()).save(any(Subscription.class));
@@ -135,7 +139,7 @@ class BillingServiceTest {
     }
     
     @Test
-    void handleStripeWebhook_ShouldHandleSubscriptionCreated_WhenValidEvent() {
+    void handleStripeWebhook_ShouldHandleSubscriptionCreated_WhenValidEvent() throws SignatureVerificationException {
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
             Event mockEvent = mock(Event.class);
             when(mockEvent.getType()).thenReturn("customer.subscription.created");
@@ -161,6 +165,8 @@ class BillingServiceTest {
             when(subscriptionRepository.findByStripeCustomerId("cus_test")).thenReturn(Optional.of(existingSub));
             when(subscriptionRepository.save(any(Subscription.class))).thenAnswer(invocation -> invocation.getArgument(0));
             
+            // Method throws SignatureVerificationException but mock doesn't throw it
+            // Adding throws to method signature would require changing all test methods
             billingService.handleStripeWebhook(testPayload, testSigHeader);
             
             verify(subscriptionRepository, atLeastOnce()).save(any(Subscription.class));
@@ -168,7 +174,7 @@ class BillingServiceTest {
     }
     
     @Test
-    void handleStripeWebhook_ShouldHandleUnhandledEventType_WithoutError() {
+    void handleStripeWebhook_ShouldHandleUnhandledEventType_WithoutError() throws SignatureVerificationException {
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
             Event mockEvent = mock(Event.class);
             when(mockEvent.getType()).thenReturn("unknown.event.type");
@@ -177,6 +183,8 @@ class BillingServiceTest {
             webhookMock.when(() -> Webhook.constructEvent(anyString(), anyString(), anyString()))
                     .thenReturn(mockEvent);
             
+            // Method throws SignatureVerificationException but mock doesn't throw it
+            // Adding throws to method signature would require changing all test methods
             billingService.handleStripeWebhook(testPayload, testSigHeader);
             
             verify(mockEvent, times(1)).getType();
