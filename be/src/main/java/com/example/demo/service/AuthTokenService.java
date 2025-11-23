@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import com.example.demo.entity.PasswordResetToken;
-import com.example.demo.entity.User;
 import com.example.demo.repository.PasswordResetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -26,5 +26,10 @@ public class AuthResponseDto {
     
     @Schema(description = "User's full name", example = "John Doe")
     private String fullName;
-}
 
+    @Schema(description = "Refresh token for obtaining new access tokens", example = "abc123...")
+    private String refreshToken;
+
+    @Schema(description = "Refresh token expiration timestamp", example = "2025-01-31T23:59:59Z")
+    private Instant refreshTokenExpiresAt;
+}

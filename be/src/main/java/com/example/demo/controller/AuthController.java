@@ -3,13 +3,16 @@ package com.example.demo.controller;
 import com.example.demo.dto.AuthRequestDto;
 import com.example.demo.dto.AuthResponseDto;
 import com.example.demo.dto.ForgotPasswordDto;
+import com.example.demo.dto.RefreshTokenDto;
 import com.example.demo.dto.RegisterDto;
 import com.example.demo.dto.ResetPasswordDto;
 import com.example.demo.entity.PasswordResetToken;
+import com.example.demo.entity.RefreshToken;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuthTokenService;
 import com.example.demo.service.EmailService;
+import com.example.demo.service.TokenService;
 import com.example.demo.util.AuditLoggingHelper;
 import com.example.demo.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,12 +27,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -43,6 +49,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final AuthTokenService authTokenService;
     private final EmailService emailService;
+    private final TokenService tokenService;
     private final AuditLoggingHelper auditLoggingHelper;
     private final ObjectMapper objectMapper;
 
@@ -138,11 +145,16 @@ public class AuthController {
             // Generate JWT token
             String token = jwtUtil.generateToken(user);
 
+            // Generate refresh token
+            RefreshToken refreshToken = tokenService.generateRefreshToken(user);
+
             AuthResponseDto response = AuthResponseDto.builder()
                     .token(token)
                     .expiresAt(jwtUtil.getExpirationInstant(token))
                     .email(user.getEmail())
                     .fullName(user.getFullName())
+                    .refreshToken(refreshToken.getToken())
+                    .refreshTokenExpiresAt(refreshToken.getExpiresAt())
                     .build();
 
             return ResponseEntity.ok(response);
@@ -319,5 +331,115 @@ public class AuthController {
                 HttpStatus.INTERNAL_SERVER_ERROR, "auth");
         }
     }
-}
 
+    @Operation(
+        summary = "Refresh access token",
+        description = "Refresh access token using refresh token. Returns new access token and rotated refresh token.",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Token refreshed successfully",
+                content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token")
+        }
+    )
+    @PostMapping("/refresh")
+    @Transactional
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenDto dto) {
+        var ctx = auditLoggingHelper.start("/api/auth/refresh", null, objectMapper.valueToTree(dto));
+
+        try {
+            RefreshToken oldRefreshToken = tokenService.validateRefreshToken(dto.getRefreshToken());
+
+            if (oldRefreshToken == null) {
+                return auditLoggingHelper.error(ctx, "Invalid or expired refresh token",
+                    HttpStatus.UNAUTHORIZED, "auth");
+            }
+
+            User user = userRepository.findById(oldRefreshToken.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            if (!user.isEnabled()) {
+                return auditLoggingHelper.error(ctx, "Account is disabled",
+                    HttpStatus.FORBIDDEN, "auth");
+            }
+
+            RefreshToken newRefreshToken = tokenService.rotateRefreshToken(dto.getRefreshToken());
+            if (newRefreshToken == null) {
+                return auditLoggingHelper.error(ctx, "Failed to rotate refresh token",
+                    HttpStatus.INTERNAL_SERVER_ERROR, "auth");
+            }
+
+            String newAccessToken = jwtUtil.generateToken(user);
+
+            AuthResponseDto response = AuthResponseDto.builder()
+                    .token(newAccessToken)
+                    .expiresAt(jwtUtil.getExpirationInstant(newAccessToken))
+                    .email(user.getEmail())
+                    .fullName(user.getFullName())
+                    .refreshToken(newRefreshToken.getToken())
+                    .refreshTokenExpiresAt(newRefreshToken.getExpiresAt())
+                    .build();
+
+            log.info("Token refreshed for user {}", user.getEmail());
+
+            return auditLoggingHelper.ok(ctx, response, "auth", false,
+                objectMapper.createObjectNode().put("action", "refresh_token"));
+
+        } catch (Exception e) {
+            log.error("Error refreshing token: {}", e.getMessage(), e);
+            return auditLoggingHelper.error(ctx, "Failed to refresh token: " + e.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR, "auth");
+        }
+    }
+
+    @Operation(
+        summary = "Logout",
+        description = "Revoke all refresh tokens for the authenticated user",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Logout successful"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+        }
+    )
+    @PostMapping("/logout")
+    @Transactional
+    public ResponseEntity<?> logout() {
+        UUID userId = getCurrentUserId();
+        Map<String, String> params = new HashMap<>();
+        var ctx = auditLoggingHelper.start("/api/auth/logout", userId, objectMapper.valueToTree(params));
+
+        try {
+            if (userId == null) {
+                return auditLoggingHelper.error(ctx, "User not authenticated",
+                    HttpStatus.UNAUTHORIZED, "auth");
+            }
+
+            tokenService.revokeAllUserTokens(userId);
+            log.info("User {} logged out, all refresh tokens revoked", userId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("requestId", ctx.requestId().toString());
+            response.put("message", "Logged out successfully");
+            response.put("success", true);
+
+            return auditLoggingHelper.ok(ctx, response, "auth", false,
+                objectMapper.createObjectNode().put("action", "logout"));
+
+        } catch (Exception e) {
+            log.error("Error during logout: {}", e.getMessage(), e);
+            return auditLoggingHelper.error(ctx, "Failed to logout: " + e.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR, "auth");
+        }
+    }
+
+    private UUID getCurrentUserId() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                String email = auth.getName();
+                return userRepository.findByEmail(email).map(User::getId).orElse(null);
+            }
+        } catch (Exception e) {
+            log.debug("Could not get current user", e);
+        }
+        return null;
+    }
+}

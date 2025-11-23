@@ -50,6 +50,9 @@ public abstract class IntegrationTestBase {
         // Add Stripe test keys
         registry.add("stripe.secret-key", () -> "sk_test_dummy_key_for_testing_only");
         registry.add("stripe.webhook-secret", () -> "whsec_test_dummy_webhook_secret_for_testing_only");
+        
+        // Add JWT secret (must be at least 256 bits = 32 bytes)
+        registry.add("jwt.secret", () -> "test-jwt-secret-key-must-be-at-least-256-bits-long-for-hmac-sha256-algorithm");
     }
 }
 
