@@ -48,6 +48,10 @@ public class Portfolio {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
     
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+    
     @PrePersist
     protected void onCreate() {
         if (virtualBalance == null) {

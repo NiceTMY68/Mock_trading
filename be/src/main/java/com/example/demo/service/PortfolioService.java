@@ -4,10 +4,15 @@ import com.example.demo.entity.Holding;
 import com.example.demo.entity.Portfolio;
 import com.example.demo.repository.HoldingRepository;
 import com.example.demo.repository.PortfolioRepository;
+import com.example.demo.util.OptimisticLockRetry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -24,13 +29,26 @@ public class PortfolioService {
     private final PortfolioRepository portfolioRepository;
     private final HoldingRepository holdingRepository;
     private final PriceService priceService;
+    private final OptimisticLockRetry optimisticLockRetry;
     
     private static final BigDecimal INITIAL_BALANCE = BigDecimal.valueOf(10000);
     
-    @Transactional
     public void recalculate(UUID userId) {
         log.debug("Recalculating portfolio for user: {}", userId);
         
+        try {
+            optimisticLockRetry.executeWithRetry(() -> {
+                recalculateInternal(userId);
+            }, "recalculate");
+        } catch (OptimisticLockingFailureException | DataIntegrityViolationException e) {
+            log.error("Failed to recalculate portfolio after retries: user={}", userId, e);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, 
+                    "Concurrent update detected. Please retry the operation.");
+        }
+    }
+    
+    @Transactional
+    private void recalculateInternal(UUID userId) {
         Portfolio portfolio = portfolioRepository.findByUserId(userId)
                 .orElseGet(() -> createDefaultPortfolio(userId));
         
@@ -84,8 +102,20 @@ public class PortfolioService {
                 totalMarketValue, totalPnl, portfolio.getTotalPnlPercentage());
     }
     
-    @Transactional
     public void updateBalance(UUID userId, BigDecimal amount, boolean isBuy) {
+        try {
+            optimisticLockRetry.executeWithRetry(() -> {
+                updateBalanceInternal(userId, amount, isBuy);
+            }, "updateBalance");
+        } catch (OptimisticLockingFailureException | DataIntegrityViolationException e) {
+            log.error("Failed to update portfolio balance after retries: user={}", userId, e);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, 
+                    "Concurrent update detected. Please retry the operation.");
+        }
+    }
+    
+    @Transactional
+    private void updateBalanceInternal(UUID userId, BigDecimal amount, boolean isBuy) {
         Portfolio portfolio = portfolioRepository.findByUserId(userId)
                 .orElseGet(() -> createDefaultPortfolio(userId));
         

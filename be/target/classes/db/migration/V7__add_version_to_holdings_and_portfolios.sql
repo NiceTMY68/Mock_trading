@@ -1,0 +1,9 @@
+ALTER TABLE holdings ADD COLUMN IF NOT EXISTS version BIGINT DEFAULT 0;
+ALTER TABLE portfolios ADD COLUMN IF NOT EXISTS version BIGINT DEFAULT 0;
+
+UPDATE holdings SET version = 0 WHERE version IS NULL;
+UPDATE portfolios SET version = 0 WHERE version IS NULL;
+
+ALTER TABLE holdings ALTER COLUMN version SET NOT NULL;
+ALTER TABLE portfolios ALTER COLUMN version SET NOT NULL;
+
