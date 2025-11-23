@@ -17,6 +17,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\inte
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\MarketOrderIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\NewsProxyIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\OrderFlowIntegrationTest.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\PasswordResetIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\PortfolioValuationIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\PriceSnapshotIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\PriceSnapshotPersistenceIntegrationTest.java
@@ -24,6 +25,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\inte
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\IntegrationTestBase.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\service\AlertServiceTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\service\AuditServiceTest.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\service\AuthTokenServiceTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\service\BacktestServiceTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\service\BillingServiceTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\service\CacheServiceTest.java

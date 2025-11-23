@@ -143,6 +143,12 @@
 		<version>3.3.1</version>
 		<scope>test</scope>
 	</dependency>
+	<!-- SendGrid Email Service -->
+	<dependency>
+		<groupId>com.sendgrid</groupId>
+		<artifactId>sendgrid-java</artifactId>
+		<version>4.10.1</version>
+	</dependency>
 	<!-- Stripe SDK -->
 	<dependency>
 		<groupId>com.stripe</groupId>
