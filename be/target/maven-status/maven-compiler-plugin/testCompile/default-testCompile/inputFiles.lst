@@ -15,6 +15,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\inte
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\FeatureFlagGatingIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\IdempotencyIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\LimitOrderMatcherIntegrationTest.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\LoginAttemptTrackingIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\MarketOrderIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\NewsProxyIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\OptimisticLockingIntegrationTest.java

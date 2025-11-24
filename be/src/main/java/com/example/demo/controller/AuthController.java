@@ -12,9 +12,11 @@ import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuthTokenService;
 import com.example.demo.service.EmailService;
+import com.example.demo.service.LoginAttemptService;
 import com.example.demo.service.TokenService;
 import com.example.demo.util.AuditLoggingHelper;
 import com.example.demo.util.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -52,6 +54,7 @@ public class AuthController {
     private final TokenService tokenService;
     private final AuditLoggingHelper auditLoggingHelper;
     private final ObjectMapper objectMapper;
+    private final LoginAttemptService loginAttemptService;
 
     @Value("${app.base-url:http://localhost:8080}")
     private String appBaseUrl;
@@ -122,16 +125,31 @@ public class AuthController {
         }
     )
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody AuthRequestDto authRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequestDto authRequest, 
+                                   HttpServletRequest request) {
+        String email = authRequest.getEmail();
+        String ipAddress = getClientIpAddress(request);
+        
         try {
+            // Check if account is locked
+            loginAttemptService.checkLocked(email, ipAddress);
+            
             // Find user by email
-            User user = userRepository.findByEmail(authRequest.getEmail())
-                    .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> {
+                        // Register failed attempt for non-existent user
+                        loginAttemptService.registerFailed(email, ipAddress);
+                        return new RuntimeException("Invalid email or password");
+                    });
 
             // Validate password
             if (!passwordEncoder.matches(authRequest.getPassword(), user.getPasswordHash())) {
+                // Register failed attempt
+                loginAttemptService.registerFailed(email, ipAddress);
                 Map<String, String> error = new HashMap<>();
                 error.put("error", "Invalid email or password");
+                int remaining = loginAttemptService.getRemainingAttemptsByEmail(email);
+                error.put("remainingAttempts", String.valueOf(remaining));
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
             }
 
@@ -141,6 +159,9 @@ public class AuthController {
                 error.put("error", "Account is disabled");
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
             }
+
+            // Reset failed attempts on successful login
+            loginAttemptService.resetOnSuccess(email, ipAddress);
 
             // Generate JWT token
             String token = jwtUtil.generateToken(user);
@@ -159,11 +180,37 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
 
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            // Account locked exception
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getReason());
+            error.put("code", "ACCOUNT_LOCKED");
+            return ResponseEntity.status(e.getStatusCode()).body(error);
         } catch (Exception e) {
+            // Register failed attempt for any other error
+            loginAttemptService.registerFailed(email, ipAddress);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Login failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
+    }
+    
+    /**
+     * Get client IP address from request
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String ipAddress = request.getHeader("X-Forwarded-For");
+        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+            ipAddress = request.getHeader("X-Real-IP");
+        }
+        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+            ipAddress = request.getRemoteAddr();
+        }
+        // Handle multiple IPs in X-Forwarded-For header
+        if (ipAddress != null && ipAddress.contains(",")) {
+            ipAddress = ipAddress.split(",")[0].trim();
+        }
+        return ipAddress;
     }
 
     @Operation(

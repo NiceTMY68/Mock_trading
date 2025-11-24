@@ -30,6 +30,7 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     
     private final StringRedisTemplate rateLimiterRedisTemplate;
     private final Map<String, RateLimiterConfig.RateLimitRule> rateLimitRules;
+    private final RateLimiterConfig.RateLimitRule authRateLimitRule;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     
@@ -42,8 +43,10 @@ public class RateLimitInterceptor implements HandlerInterceptor {
                              @NonNull Object handler) throws Exception {
         
         String path = request.getRequestURI();
+        
+        // Special handling for auth endpoints with IP-based rate limiting
         if (path.startsWith("/api/auth/")) {
-            return true;
+            return handleAuthRateLimit(request, response);
         }
         
         String userIdentifier = getUserIdentifier(request);
@@ -62,6 +65,44 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         addRateLimitHeaders(response, userIdentifier, rule);
         
         return true;
+    }
+    
+    /**
+     * Handle rate limiting for auth endpoints with IP-based thresholds
+     */
+    private boolean handleAuthRateLimit(HttpServletRequest request, HttpServletResponse response) 
+            throws Exception {
+        String ipAddress = getClientIpAddress(request);
+        String userIdentifier = "auth:ip:" + ipAddress;
+        
+        boolean allowed = checkRateLimit(userIdentifier, authRateLimitRule);
+        
+        if (!allowed) {
+            handleRateLimitExceeded(response, userIdentifier, authRateLimitRule);
+            return false;
+        }
+        
+        addRateLimitHeaders(response, userIdentifier, authRateLimitRule);
+        
+        return true;
+    }
+    
+    /**
+     * Get client IP address from request
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String ipAddress = request.getHeader("X-Forwarded-For");
+        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+            ipAddress = request.getHeader("X-Real-IP");
+        }
+        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+            ipAddress = request.getRemoteAddr();
+        }
+        // Handle multiple IPs in X-Forwarded-For header
+        if (ipAddress != null && ipAddress.contains(",")) {
+            ipAddress = ipAddress.split(",")[0].trim();
+        }
+        return ipAddress;
     }
     
     /**

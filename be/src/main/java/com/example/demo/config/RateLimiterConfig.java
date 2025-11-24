@@ -28,6 +28,9 @@ public class RateLimiterConfig {
     @Value("${rate-limit.bucket-size-multiplier:2}")
     private Integer bucketSizeMultiplier;
     
+    @Value("${auth.login.ip-rate-limit-per-minute:10}")
+    private Integer authIpRateLimitPerMinute;
+    
     /**
      * Redis template for rate limiter operations
      */
@@ -67,6 +70,18 @@ public class RateLimiterConfig {
                 .build());
         
         return rules;
+    }
+    
+    /**
+     * Get rate limit rule for auth endpoints (IP-based)
+     */
+    @Bean("authRateLimitRule")
+    public RateLimitRule authRateLimitRule() {
+        return RateLimitRule.builder()
+                .requestsPerMinute(authIpRateLimitPerMinute)
+                .bucketSize(authIpRateLimitPerMinute * bucketSizeMultiplier)
+                .refillRate(authIpRateLimitPerMinute / 60.0)
+                .build();
     }
     
     /**
