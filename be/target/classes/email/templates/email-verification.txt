@@ -1,0 +1,15 @@
+Verify Your Email Address
+
+Hello,
+
+Thank you for registering with Crypto Mock Trading! Please verify your email address by clicking the following link:
+
+{{verificationUrl}}
+
+Why verify? Email verification helps us ensure account security and enables important notifications.
+
+If you didn't create an account, please ignore this email.
+
+Thank you,
+Crypto Mock Trading Team
+

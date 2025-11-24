@@ -149,6 +149,15 @@
 		<artifactId>sendgrid-java</artifactId>
 		<version>4.10.1</version>
 	</dependency>
+	<!-- Spring Retry for email service -->
+	<dependency>
+		<groupId>org.springframework.retry</groupId>
+		<artifactId>spring-retry</artifactId>
+	</dependency>
+	<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-aspects</artifactId>
+	</dependency>
 	<!-- Stripe SDK -->
 	<dependency>
 		<groupId>com.stripe</groupId>

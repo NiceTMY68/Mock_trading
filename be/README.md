@@ -73,10 +73,18 @@ Key configuration properties in `application.properties`:
 - `app.auth.token.expiry-hours=1` - Password reset/email verification token expiration (hours)
 
 #### Email Configuration (SendGrid)
-- `email.sendgrid.api-key=${SENDGRID_API_KEY:}` - SendGrid API key
+- `email.sendgrid.api-key=${SENDGRID_API_KEY:}` - SendGrid API key (required if enabled)
 - `email.sendgrid.from-email=${SENDGRID_FROM_EMAIL:noreply@example.com}` - From email address
-- `email.sendgrid.from-name=${SENDGRID_FROM_NAME:Crypto Mock Trading}` - From name
-- `email.sendgrid.enabled=${SENDGRID_ENABLED:false}` - Enable/disable SendGrid
+- `email.sendgrid.from-name=${SENDGRID_FROM_NAME:Crypto Mock Trading}` - From name displayed in emails
+- `email.sendgrid.enabled=${SENDGRID_ENABLED:false}` - Enable/disable SendGrid email service
+
+#### Email Retry Configuration
+- `email.retry.max-attempts=${EMAIL_RETRY_MAX_ATTEMPTS:3}` - Maximum retry attempts for failed email sends
+- `email.retry.initial-interval-ms=${EMAIL_RETRY_INITIAL_INTERVAL_MS:1000}` - Initial delay before first retry (milliseconds)
+- `email.retry.multiplier=${EMAIL_RETRY_MULTIPLIER:2.0}` - Exponential backoff multiplier (e.g., 2.0 = double delay each retry)
+- `email.retry.max-interval-ms=${EMAIL_RETRY_MAX_INTERVAL_MS:10000}` - Maximum delay between retries (milliseconds)
+
+**Note:** Email templates are located in `src/main/resources/email/templates/` and support HTML and plain text formats. Templates use `{{variableName}}` syntax for variable substitution.
 
 #### Rate Limiting
 - `rate-limit.anonymous.requests-per-minute=20` - Anonymous user rate limit
