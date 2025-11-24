@@ -4,6 +4,7 @@ import com.example.demo.entity.UsageMetric;
 import com.example.demo.repository.UsageMetricRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,10 @@ public class UsageService {
     
     private final UsageMetricRepository usageMetricRepository;
     private final ObjectMapper objectMapper;
+    private final RedisUsageBufferService redisUsageBufferService;
+    
+    @Value("${app.usage.buffer.enabled:true}")
+    private boolean bufferEnabled;
     
     public static final String NEWS_API_CALLS = "news.api.calls";
     public static final String NEWS_API_ARTICLES = "news.api.articles";
@@ -36,16 +41,22 @@ public class UsageService {
     @Transactional
     public void increment(String metricKey, UUID userId, int amount, String metadata) {
         try {
-            UsageMetric metric = UsageMetric.builder()
-                .metricKey(metricKey)
-                .userId(userId)
-                .amount(amount)
-                .metadata(metadata)
-                .build();
-            
-            usageMetricRepository.save(metric);
-            log.debug("Recorded usage: key={}, userId={}, amount={}", metricKey, userId, amount);
-            
+            if (bufferEnabled) {
+                // Buffer in Redis for batch flushing
+                redisUsageBufferService.increment(metricKey, userId, amount, metadata);
+                log.debug("Buffered usage: key={}, userId={}, amount={}", metricKey, userId, amount);
+            } else {
+                // Direct database write (fallback mode)
+                UsageMetric metric = UsageMetric.builder()
+                    .metricKey(metricKey)
+                    .userId(userId)
+                    .amount(amount)
+                    .metadata(metadata)
+                    .build();
+                
+                usageMetricRepository.save(metric);
+                log.debug("Recorded usage: key={}, userId={}, amount={}", metricKey, userId, amount);
+            }
         } catch (Exception e) {
             log.error("Failed to record usage metric: key={}, userId={}, amount={}", 
                 metricKey, userId, amount, e);
@@ -60,16 +71,22 @@ public class UsageService {
                 metadataStr = metadataStr.substring(0, 497) + "...";
             }
             
-            UsageMetric metric = UsageMetric.builder()
-                .metricKey(metricKey)
-                .userId(userId)
-                .amount((int) amount)
-                .metadata(metadataStr)
-                .build();
-            
-            usageMetricRepository.save(metric);
-            log.debug("Recorded usage: key={}, userId={}, amount={}", metricKey, userId, amount);
-            
+            if (bufferEnabled) {
+                // Buffer in Redis for batch flushing
+                redisUsageBufferService.increment(metricKey, userId, (int) amount, metadataStr);
+                log.debug("Buffered usage: key={}, userId={}, amount={}", metricKey, userId, amount);
+            } else {
+                // Direct database write (fallback mode)
+                UsageMetric metric = UsageMetric.builder()
+                    .metricKey(metricKey)
+                    .userId(userId)
+                    .amount((int) amount)
+                    .metadata(metadataStr)
+                    .build();
+                
+                usageMetricRepository.save(metric);
+                log.debug("Recorded usage: key={}, userId={}, amount={}", metricKey, userId, amount);
+            }
         } catch (Exception e) {
             log.error("Failed to record usage metric: key={}, userId={}, amount={}", 
                 metricKey, userId, amount, e);

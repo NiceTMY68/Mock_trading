@@ -92,6 +92,12 @@ Key configuration properties in `application.properties`:
 - `rate-limit.pro.requests-per-minute=300` - Pro tier rate limit
 - `rate-limit.bucket-size-multiplier=2` - Token bucket size multiplier
 
+#### Usage Metrics Batching
+- `app.usage.buffer.enabled=${USAGE_BUFFER_ENABLED:true}` - Enable/disable Redis buffering for usage metrics
+- `app.usage.flush.interval=${USAGE_FLUSH_INTERVAL_MS:60000}` - Interval in milliseconds for flushing buffered metrics to database (default: 1 minute)
+
+**Note:** When buffering is enabled, usage metrics are accumulated in Redis using INCR operations and periodically flushed to the database in batches. This reduces database write load during high-frequency metric increments.
+
 #### Order Simulation
 - `order.simulation.slippage-percent=0.001` - Market order slippage percent (0.1% default)
 - `order.simulation.default-liquidity-threshold=0` - Default quantity threshold for triggering partial fills (0 disables)

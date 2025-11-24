@@ -27,6 +27,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\inte
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\RateLimitIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\RefreshTokenIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\ShedLockIntegrationTest.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\UsageMetricsBatchingIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\integration\WebhookDeduplicationIntegrationTest.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\IntegrationTestBase.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\test\java\com\example\demo\service\AlertServiceTest.java
