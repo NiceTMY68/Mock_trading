@@ -117,6 +117,15 @@ Key configuration properties in `application.properties`:
 
 **Note:** Cache warming prefetches klines for top symbols by market cap to improve cache hit rates. The scheduler uses ShedLock to ensure only one instance runs in distributed deployments.
 
+#### Data Retention
+- `retention.enabled=${RETENTION_ENABLED:true}` - Enable/disable data retention cleanup scheduler
+- `retention.cleanup-cron=${RETENTION_CLEANUP_CRON:0 0 2 * * ?}` - Cron expression for cleanup schedule (default: daily at 2 AM)
+- `retention.usage-metrics-days=${RETENTION_USAGE_METRICS_DAYS:90}` - Retention period for usage metrics in days (default: 90)
+- `retention.request-logs-days=${RETENTION_REQUEST_LOGS_DAYS:30}` - Retention period for request logs in days (default: 30)
+- `retention.price-snapshots-days=${RETENTION_PRICE_SNAPSHOTS_DAYS:180}` - Retention period for price snapshots in days (default: 180)
+
+**Note:** The data retention scheduler automatically deletes records older than the configured retention periods. The scheduler uses ShedLock to ensure only one instance runs in distributed deployments. See `ops/README.md` for backup recommendations.
+
 #### ShedLock Configuration
 - Uses JDBC provider with PostgreSQL
 - Default lock duration: 30 seconds (`lockAtMostFor`)
@@ -380,6 +389,57 @@ be/
 ├── Dockerfile
 └── pom.xml
 ```
+
+## Data Retention and Backups
+
+### Data Retention
+
+The application includes a scheduled data retention job that automatically cleans up old records:
+
+- **Usage Metrics**: Retained for 90 days (configurable)
+- **Request Logs**: Retained for 30 days (configurable)
+- **Price Snapshots**: Retained for 180 days (configurable)
+
+The retention scheduler runs daily at 2 AM (configurable via cron expression) and uses ShedLock to ensure only one instance runs in distributed deployments.
+
+### Database Backups
+
+**Recommended Backup Strategy:**
+
+1. **Daily Full Backups**: Run at off-peak hours (e.g., 2-3 AM)
+2. **Encryption**: Always encrypt backups before storing
+3. **S3 Storage**: Upload encrypted backups to S3 with lifecycle policies
+4. **Retention**: Keep daily backups for 30 days, weekly for 90 days, monthly for 1 year
+
+**Backup Scripts:**
+
+See `ops/` directory for backup scripts:
+- `backup-database.sh` - Linux/macOS backup script
+- `backup-database.ps1` - Windows PowerShell backup script
+- `README.md` - Detailed backup documentation and best practices
+
+**Quick Start:**
+
+```bash
+# Linux/macOS
+export DB_PASS=your_password
+export S3_BUCKET=your-backup-bucket
+./ops/backup-database.sh
+
+# Windows PowerShell
+$env:DB_PASS = "your_password"
+$env:S3_BUCKET = "your-backup-bucket"
+.\ops\backup-database.ps1
+```
+
+**Cron Example (Linux):**
+
+```bash
+# Daily backup at 3 AM
+0 3 * * * /path/to/backup-database.sh my-s3-bucket >> /var/log/db-backup.log 2>&1
+```
+
+For detailed backup configuration, encryption, and restore procedures, see `ops/README.md`.
 
 ## Development
 

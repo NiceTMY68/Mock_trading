@@ -1,0 +1,21 @@
+-------------------------------------------------------------------------------
+Test set: com.example.demo.integration.DataRetentionIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 15.96 s <<< FAILURE! -- in com.example.demo.integration.DataRetentionIntegrationTest
+com.example.demo.integration.DataRetentionIntegrationTest.cleanupOldData_ShouldDeleteOldUsageMetrics -- Time elapsed: 0.625 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+Expecting actual:
+  [UsageMetric(id=2, metricKey=test.metric, userId=31ddfc74-c918-42a1-9291-ca6fb58305a3, amount=50, createdAt=2025-11-14T19:00:31.918175Z, metadata=null)]
+to contain exactly (and in same order):
+  [UsageMetric(id=2, metricKey=test.metric, userId=31ddfc74-c918-42a1-9291-ca6fb58305a3, amount=50, createdAt=2025-11-14T19:00:31.918174500Z, metadata=null)]
+but some elements were not found:
+  [UsageMetric(id=2, metricKey=test.metric, userId=31ddfc74-c918-42a1-9291-ca6fb58305a3, amount=50, createdAt=2025-11-14T19:00:31.918174500Z, metadata=null)]
+and others were not expected:
+  [UsageMetric(id=2, metricKey=test.metric, userId=31ddfc74-c918-42a1-9291-ca6fb58305a3, amount=50, createdAt=2025-11-14T19:00:31.918175Z, metadata=null)]
+
+	at com.example.demo.integration.DataRetentionIntegrationTest.cleanupOldData_ShouldDeleteOldUsageMetrics(DataRetentionIntegrationTest.java:105)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+

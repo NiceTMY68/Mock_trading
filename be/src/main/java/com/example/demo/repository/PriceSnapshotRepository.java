@@ -29,4 +29,10 @@ public interface PriceSnapshotRepository extends JpaRepository<PriceSnapshot, Lo
     void deleteByCoinSymbolAndTimestampBefore(String coinSymbol, Instant timestamp);
     
     PriceSnapshot findTopByCoinSymbolOrderByTimestampDesc(String coinSymbol);
+
+    /**
+     * Delete price snapshots older than the specified cutoff date.
+     * Used by data retention scheduler.
+     */
+    int deleteByTimestampBefore(Instant cutoffDate);
 }

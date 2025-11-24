@@ -11,5 +11,11 @@ import java.util.UUID;
 public interface RequestLogRepository extends JpaRepository<RequestLog, UUID> {
     
     Optional<RequestLog> findByRequestId(UUID requestId);
+
+    /**
+     * Delete request logs older than the specified cutoff date.
+     * Used by data retention scheduler.
+     */
+    int deleteByCreatedAtBefore(java.time.Instant cutoffDate);
 }
 

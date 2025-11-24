@@ -40,5 +40,11 @@ public interface UsageMetricRepository extends JpaRepository<UsageMetric, Long> 
     
     @Query("SELECT SUM(u.amount) FROM UsageMetric u WHERE u.metricKey = :metricKey AND u.userId = :userId")
     Long sumAmountByMetricKeyAndUserId(@Param("metricKey") String metricKey, @Param("userId") UUID userId);
+
+    /**
+     * Delete usage metrics older than the specified cutoff date.
+     * Used by data retention scheduler.
+     */
+    int deleteByCreatedAtBefore(Instant cutoffDate);
 }
 
