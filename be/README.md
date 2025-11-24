@@ -108,6 +108,15 @@ Key configuration properties in `application.properties`:
 - `app.limit.matcher.delay=5000` - Limit order matcher delay (ms)
 - `app.alert.checker.delay=60000` - Alert checker delay (ms)
 
+#### Cache Warming
+- `app.cache.warming.enabled=${CACHE_WARMING_ENABLED:true}` - Enable/disable cache warming scheduler
+- `app.cache.warming.interval=${CACHE_WARMING_INTERVAL_MS:300000}` - Cache warming interval in milliseconds (default: 5 minutes)
+- `app.cache.warming.top-symbols-count=${CACHE_WARMING_TOP_SYMBOLS:10}` - Number of top symbols to warm (default: 10)
+- `app.cache.warming.intervals=${CACHE_WARMING_INTERVALS:1m,5m,15m,1h}` - Comma-separated list of intervals to warm (default: 1m,5m,15m,1h)
+- `app.cache.warming.klines-limit=${CACHE_WARMING_KLINE_LIMIT:100}` - Number of klines to fetch per symbol/interval (default: 100)
+
+**Note:** Cache warming prefetches klines for top symbols by market cap to improve cache hit rates. The scheduler uses ShedLock to ensure only one instance runs in distributed deployments.
+
 #### ShedLock Configuration
 - Uses JDBC provider with PostgreSQL
 - Default lock duration: 30 seconds (`lockAtMostFor`)
@@ -319,6 +328,28 @@ curl -i http://localhost:8080/api/v1/market/symbols
 
 **POST** `/api/watchlist/items` (Protected)
 - Add symbol to watchlist
+
+### Admin Cache Management
+
+**POST** `/api/admin/cache/invalidate` (Admin only)
+```json
+{
+  "key": "binance:klines:BTCUSDT:1m:null:null:100"
+}
+```
+or with pattern (supports wildcards):
+```json
+{
+  "pattern": "binance:klines:BTCUSDT:*"
+}
+```
+- Invalidate cache by exact key or pattern
+
+**GET** `/api/admin/cache/exists/{key}` (Admin only)
+- Check if cache key exists and return TTL
+
+**POST** `/api/admin/cache/clear-all` (Admin only)
+- Clear all cache entries (use with caution!)
 
 ## Project Structure
 
