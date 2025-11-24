@@ -18,6 +18,7 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\conf
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\config\DataSeeder.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\config\JacksonConfig.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\config\OpenApiConfig.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\config\OrderSimulationProperties.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\config\RateLimiterConfig.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\config\RedisConfig.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\config\RestTemplateConfig.java
@@ -120,6 +121,8 @@ C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\serv
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\PriceWebSocketService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\RateLimitService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\SendgridEmailServiceImpl.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\SlippageModel.java
+C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\SymbolValidationService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\TokenService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\UsageService.java
 C:\Users\PC\OneDrive\Desktop\Mock_trading\be\src\main\java\com\example\demo\service\WatchlistService.java

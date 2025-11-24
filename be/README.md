@@ -60,6 +60,46 @@ Configure required variables:
 | `security.allowed-origins` | Comma-separated list for CORS | Optional |
 | `security.require-ssl` | Force HTTPS redirect (`true`/`false`) | Optional |
 
+### Application Configuration
+
+Key configuration properties in `application.properties`:
+
+#### Authentication & Security
+- `auth.login.max-attempts=5` - Maximum failed login attempts before account lock
+- `auth.login.lock-duration-minutes=15` - Account lock duration after max attempts
+- `auth.login.ip-rate-limit-per-minute=10` - IP-based rate limit for auth endpoints
+- `app.refresh-token.expiry-days=30` - Refresh token expiration (days)
+- `app.refresh-token.max-per-user=5` - Maximum active refresh tokens per user
+- `app.auth.token.expiry-hours=1` - Password reset/email verification token expiration (hours)
+
+#### Email Configuration (SendGrid)
+- `email.sendgrid.api-key=${SENDGRID_API_KEY:}` - SendGrid API key
+- `email.sendgrid.from-email=${SENDGRID_FROM_EMAIL:noreply@example.com}` - From email address
+- `email.sendgrid.from-name=${SENDGRID_FROM_NAME:Crypto Mock Trading}` - From name
+- `email.sendgrid.enabled=${SENDGRID_ENABLED:false}` - Enable/disable SendGrid
+
+#### Rate Limiting
+- `rate-limit.anonymous.requests-per-minute=20` - Anonymous user rate limit
+- `rate-limit.free.requests-per-minute=60` - Free tier rate limit
+- `rate-limit.pro.requests-per-minute=300` - Pro tier rate limit
+- `rate-limit.bucket-size-multiplier=2` - Token bucket size multiplier
+
+#### Order Simulation
+- `order.simulation.slippage-percent=0.001` - Market order slippage percent (0.1% default)
+- `order.simulation.default-liquidity-threshold=0` - Default quantity threshold for triggering partial fills (0 disables)
+- `order.simulation.liquidity-thresholds.BTCUSDT=1` - Example symbol-specific liquidity threshold (quantity units)
+- `order.simulation.price-scale=8` - Decimal precision applied after slippage calculations
+
+#### Scheduled Jobs
+- `app.limit.matcher.delay=5000` - Limit order matcher delay (ms)
+- `app.alert.checker.delay=60000` - Alert checker delay (ms)
+
+#### ShedLock Configuration
+- Uses JDBC provider with PostgreSQL
+- Default lock duration: 30 seconds (`lockAtMostFor`)
+- Minimum lock duration: 5 seconds (`lockAtLeastFor`)
+- Table: `shedlock` (created via migration V8)
+
 ### 2. Start Infrastructure
 
 ```bash
@@ -322,6 +362,8 @@ be/
 ```
 
 Migrations are automatically applied on application startup.
+
+**Important**: All migrations are versioned (V1, V2, V3...) and should be reviewed before merging to production. Never modify existing migrations - create new ones instead.
 
 ### Building
 

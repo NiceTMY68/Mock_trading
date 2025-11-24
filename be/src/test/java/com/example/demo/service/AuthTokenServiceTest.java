@@ -50,69 +50,79 @@ class AuthTokenServiceTest {
 
     @Test
     void validateToken_WithValidToken_ShouldReturnToken() {
+        String rawToken = "valid-token";
+        // Note: In real implementation, token is hashed before lookup
+        // This test mocks the repository to return the token directly
         PasswordResetToken validToken = PasswordResetToken.builder()
                 .id(UUID.randomUUID())
                 .userId(testUserId)
-                .token("valid-token")
+                .token(rawToken) // In DB, this would be hashed
                 .expiresAt(Instant.now().plusSeconds(3600))
                 .used(false)
                 .build();
 
-        when(passwordResetRepository.findByTokenAndUsedFalse("valid-token"))
+        // Mock will hash the token before lookup
+        when(passwordResetRepository.findByTokenAndUsedFalse(anyString()))
                 .thenReturn(Optional.of(validToken));
 
-        PasswordResetToken result = authTokenService.validateToken("valid-token");
+        PasswordResetToken result = authTokenService.validateToken(rawToken);
 
         assertThat(result).isNotNull();
-        assertThat(result.getToken()).isEqualTo("valid-token");
+        verify(passwordResetRepository).findByTokenAndUsedFalse(anyString());
     }
 
     @Test
     void validateToken_WithExpiredToken_ShouldReturnNull() {
+        String rawToken = "expired-token";
         PasswordResetToken expiredToken = PasswordResetToken.builder()
                 .id(UUID.randomUUID())
                 .userId(testUserId)
-                .token("expired-token")
+                .token(rawToken) // In DB, this would be hashed
                 .expiresAt(Instant.now().minusSeconds(3600))
                 .used(false)
                 .build();
 
-        when(passwordResetRepository.findByTokenAndUsedFalse("expired-token"))
+        when(passwordResetRepository.findByTokenAndUsedFalse(anyString()))
                 .thenReturn(Optional.of(expiredToken));
 
-        PasswordResetToken result = authTokenService.validateToken("expired-token");
+        PasswordResetToken result = authTokenService.validateToken(rawToken);
 
-        assertThat(result).isNull();
+        assertThat(result).isNull(); // Expired token should return null
+        verify(passwordResetRepository).findByTokenAndUsedFalse(anyString());
     }
 
     @Test
     void validateToken_WithUsedToken_ShouldReturnNull() {
-        when(passwordResetRepository.findByTokenAndUsedFalse("used-token"))
+        String rawToken = "used-token";
+        // Token is hashed before lookup, so mock with anyString()
+        when(passwordResetRepository.findByTokenAndUsedFalse(anyString()))
                 .thenReturn(Optional.empty());
 
-        PasswordResetToken result = authTokenService.validateToken("used-token");
+        PasswordResetToken result = authTokenService.validateToken(rawToken);
 
         assertThat(result).isNull();
+        verify(passwordResetRepository).findByTokenAndUsedFalse(anyString());
     }
 
     @Test
     void markTokenAsUsed_ShouldSetUsedToTrue() {
+        String rawToken = "test-token";
         PasswordResetToken token = PasswordResetToken.builder()
                 .id(UUID.randomUUID())
                 .userId(testUserId)
-                .token("test-token")
+                .token(rawToken) // In DB, this would be hashed
                 .expiresAt(Instant.now().plusSeconds(3600))
                 .used(false)
                 .build();
 
-        when(passwordResetRepository.findByToken("test-token"))
+        when(passwordResetRepository.findByToken(anyString()))
                 .thenReturn(Optional.of(token));
         when(passwordResetRepository.save(any(PasswordResetToken.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        authTokenService.markTokenAsUsed("test-token");
+        authTokenService.markTokenAsUsed(rawToken);
 
-        verify(passwordResetRepository).findByToken("test-token");
+        verify(passwordResetRepository).findByToken(anyString()); // Token is hashed before lookup
         verify(passwordResetRepository).save(argThat(t -> t.isUsed()));
     }
 }

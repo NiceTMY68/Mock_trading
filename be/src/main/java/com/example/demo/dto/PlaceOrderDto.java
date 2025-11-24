@@ -41,4 +41,7 @@ public class PlaceOrderDto {
     
     @Schema(description = "Optional notes for the order", example = "Long position entry")
     private String notes;
+
+    @Schema(description = "If true, keep remaining quantity as pending limit order when partial fill occurs", example = "false")
+    private Boolean keepRemainingOnPartialFill;
 }

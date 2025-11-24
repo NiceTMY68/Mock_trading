@@ -135,8 +135,10 @@ class PasswordResetIntegrationTest extends IntegrationTestBase {
         assertThat(passwordEncoder.matches(newPassword, updatedUser.getPasswordHash())).isTrue();
         assertThat(passwordEncoder.matches("originalPassword123", updatedUser.getPasswordHash())).isFalse();
 
-        PasswordResetToken usedToken = passwordResetRepository.findByToken(resetToken.getToken()).orElseThrow();
-        assertThat(usedToken.isUsed()).isTrue();
+        // Verify token is marked as used - validateToken should return null for used tokens
+        // Note: In production, tokens are hashed before storage for security
+        PasswordResetToken validatedToken = authTokenService.validateToken(resetToken.getToken());
+        assertThat(validatedToken).isNull(); // Token should be invalid (used)
     }
 
     @Test

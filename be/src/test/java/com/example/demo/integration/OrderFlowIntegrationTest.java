@@ -1,6 +1,8 @@
 package com.example.demo.integration;
 
 import com.example.demo.IntegrationTestBase;
+import com.example.demo.config.OrderSimulationProperties;
+import com.example.demo.config.TestConfig;
 import com.example.demo.dto.PlaceOrderDto;
 import com.example.demo.entity.Order;
 import com.example.demo.entity.Portfolio;
@@ -12,14 +14,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
+@TestPropertySource(properties = {
+    "order.simulation.slippage-percent=0.01",
+    "order.simulation.default-liquidity-threshold=0"
+})
+@Import(TestConfig.class)
 class OrderFlowIntegrationTest extends IntegrationTestBase {
     
     @Autowired
@@ -45,6 +55,9 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
     
     @Autowired
     private PriceSnapshotRepository priceSnapshotRepository;
+
+    @Autowired
+    private OrderSimulationProperties orderSimulationProperties;
     
     private User testUser;
     private Portfolio testPortfolio;
@@ -174,6 +187,78 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
             .isInstanceOf(RuntimeException.class)
             .hasMessageContaining("Insufficient holdings");
     }
+
+    @Test
+    void placeMarketOrder_InvalidTickSize_ShouldReturnError() {
+        PlaceOrderDto dto = PlaceOrderDto.builder()
+            .symbol("BTCUSDT")
+            .side(Order.OrderSide.BUY)
+            .type(Order.OrderType.MARKET)
+            .quantity(new BigDecimal("0.00015")) // not multiple of 0.0001
+            .build();
+
+        assertThatThrownBy(() -> orderService.placeMarketOrder(testUser.getId(), dto))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("tick size");
+    }
+
+    @Test
+    void placeMarketOrder_WithSlippage_ShouldAdjustExecutionPrice() {
+        PlaceOrderDto dto = PlaceOrderDto.builder()
+            .symbol("BTCUSDT")
+            .side(Order.OrderSide.BUY)
+            .type(Order.OrderType.MARKET)
+            .quantity(BigDecimal.valueOf(0.1))
+            .build();
+
+        var response = orderService.placeMarketOrder(testUser.getId(), dto);
+
+        BigDecimal expectedPrice = BigDecimal.valueOf(50000)
+            .multiply(BigDecimal.valueOf(1.01))
+            .setScale(8);
+
+        assertThat(response.getAveragePrice()).isEqualByComparingTo(expectedPrice);
+        assertThat(response.getTotalAmount()).isEqualByComparingTo(
+                response.getFilledQuantity().multiply(expectedPrice));
+    }
+
+    @Test
+    void placeMarketOrder_PartialFill_ShouldCreatePendingResidualOrder() {
+        orderSimulationProperties.getLiquidityThresholds().put("BTCUSDT", new BigDecimal("0.09"));
+        try {
+            PlaceOrderDto dto = PlaceOrderDto.builder()
+                .symbol("BTCUSDT")
+                .side(Order.OrderSide.BUY)
+                .type(Order.OrderType.MARKET)
+                .quantity(new BigDecimal("0.18"))
+                .keepRemainingOnPartialFill(true)
+                .build();
+
+            var response = orderService.placeMarketOrder(testUser.getId(), dto);
+
+            assertThat(response.getStatus()).isEqualTo(Order.OrderStatus.PARTIALLY_FILLED);
+            assertThat(response.getFilledQuantity()).isEqualByComparingTo(new BigDecimal("0.09"));
+            assertThat(response.getMessage()).contains("pending");
+
+            List<Order> orders = orderRepository.findAll();
+            assertThat(orders).hasSize(2);
+
+            Order filledOrder = orders.stream()
+                .filter(o -> o.getStatus() == Order.OrderStatus.PARTIALLY_FILLED)
+                .findFirst()
+                .orElseThrow();
+            Order pendingResidual = orders.stream()
+                .filter(o -> o.getStatus() == Order.OrderStatus.PENDING)
+                .findFirst()
+                .orElseThrow();
+
+            assertThat(filledOrder.getFilledQuantity()).isEqualByComparingTo(new BigDecimal("0.09"));
+            assertThat(pendingResidual.getQuantity()).isEqualByComparingTo(new BigDecimal("0.09"));
+            assertThat(pendingResidual.getType()).isEqualTo(Order.OrderType.LIMIT);
+        } finally {
+            orderSimulationProperties.getLiquidityThresholds().remove("BTCUSDT");
+        }
+    }
     
     @Test
     void createLimitOrder_ShouldCreatePendingOrder() {
@@ -208,7 +293,7 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
         
         var orderResponse = orderService.createLimitOrder(testUser.getId(), dto);
         
-        orderService.cancelOrder(orderResponse.getOrderId(), testUser.getId());
+        orderService.cancelOrder(testUser.getId(), orderResponse.getOrderId());
         
         Order canceledOrder = orderRepository.findByOrderId(orderResponse.getOrderId()).orElseThrow();
         assertThat(canceledOrder.getStatus()).isEqualTo(Order.OrderStatus.CANCELLED);

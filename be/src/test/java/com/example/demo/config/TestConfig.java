@@ -1,5 +1,6 @@
 package com.example.demo.config;
 
+import com.example.demo.client.binance.model.BinanceSymbolInfo;
 import com.example.demo.client.binance.service.BinanceRestClient;
 import com.example.demo.client.newsdata.service.NewsDataRestClient;
 import com.example.demo.entity.User;
@@ -33,7 +34,10 @@ public class TestConfig {
         when(mockClient.getTopGainers(any(Integer.class))).thenReturn(List.of());
         when(mockClient.getTopLosers(any(Integer.class))).thenReturn(List.of());
         when(mockClient.getAllTicker24hr()).thenReturn(List.of());
-        when(mockClient.getAllSymbols()).thenReturn(List.of());
+        when(mockClient.getAllSymbols()).thenReturn(List.of(
+                sampleSymbolInfo("BTCUSDT", "0.0001", "0.0001", "10"),
+                sampleSymbolInfo("ETHUSDT", "0.001", "0.001", "10")
+        ));
         
         return mockClient;
     }
@@ -74,5 +78,22 @@ public class TestConfig {
         when(mockEncoder.matches(anyString(), anyString())).thenReturn(true);
         
         return mockEncoder;
+    }
+
+    private BinanceSymbolInfo sampleSymbolInfo(String symbol, String minQty, String stepSize, String minNotional) {
+        BinanceSymbolInfo info = new BinanceSymbolInfo();
+        info.setSymbol(symbol);
+
+        BinanceSymbolInfo.Filter lotSize = new BinanceSymbolInfo.Filter();
+        lotSize.setFilterType("LOT_SIZE");
+        lotSize.setMinQty(minQty);
+        lotSize.setStepSize(stepSize);
+
+        BinanceSymbolInfo.Filter notional = new BinanceSymbolInfo.Filter();
+        notional.setFilterType("MIN_NOTIONAL");
+        notional.setMinNotional(minNotional);
+
+        info.setFilters(List.of(lotSize, notional));
+        return info;
     }
 }

@@ -56,6 +56,7 @@ class ShedLockIntegrationTest extends IntegrationTestBase {
     void multipleInstances_ShouldOnlyOneAcquireLock() throws InterruptedException {
         // This test simulates multiple instances trying to acquire the same lock
         // In a real scenario, each instance would be a separate JVM/process
+        // For actual multi-instance testing, see docs/SHEDLOCK_MULTI_INSTANCE_TESTING.md
         
         String lockName = "testLock";
         int numThreads = 5; // Simulate 5 instances
@@ -93,6 +94,9 @@ class ShedLockIntegrationTest extends IntegrationTestBase {
         // Only one instance should acquire the lock
         assertThat(successCount.get()).isEqualTo(1);
         assertThat(failureCount.get()).isEqualTo(numThreads - 1);
+        
+        // Clean up
+        releaseLock(lockName);
     }
 
     @Test
