@@ -1,2 +1,0 @@
-ALTER TABLE request_logs ADD COLUMN IF NOT EXISTS status_code INTEGER;
-

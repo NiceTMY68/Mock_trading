@@ -1,0 +1,44 @@
+{
+  "name": "crypto-community-backend",
+  "version": "1.0.0",
+  "description": "Crypto Community Platform - Real-time market data, news, and blog sharing",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "migrate": "node scripts/run-migrations.js",
+    "create-admin": "node scripts/create-admin.js"
+  },
+  "keywords": [
+    "crypto",
+    "community",
+    "blog",
+    "market-data"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "pg": "^8.11.3",
+    "redis": "^4.6.10",
+    "ws": "^8.14.2",
+    "axios": "^1.6.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "express-validator": "^7.0.1",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  }
+}
+

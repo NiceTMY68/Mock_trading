@@ -13,12 +13,34 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #111827;
-  background-color: #F8FAFC;
+  color: #f8fafc;
+  background: radial-gradient(circle at top, rgba(52, 211, 153, 0.2), transparent),
+    radial-gradient(circle at 20% 20%, rgba(124, 58, 237, 0.25), transparent 45%),
+    #020617;
 }
 
 @layer components {
   .glass-card {
     @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm;
+  }
+
+  .neo-panel {
+    @apply rounded-3xl border border-white/5 bg-white/5 shadow-xl shadow-black/40;
+  }
+}
+
+@layer base {
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
   }
 }
