@@ -1,13 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMarketList, fetchQuoteAssets } from '../../api/market';
 import { MarketCoin, MarketListResponse } from '../../types';
 import { formatCurrency, formatPercent, humanizeSymbol } from '../../utils/format';
 import { useWatchlistStore } from '../../store/watchlist';
 import { useAuthStore } from '../../store/auth';
-import { useRealtimePrices } from '../../hooks/useRealtimePrices';
+import { useGlobalWebSocket } from '../../contexts/WebSocketContext';
 import MarketFilters, { MarketFilters as MarketFiltersType } from './MarketFilters';
 import LoginModal from '../auth/LoginModal';
+import { navigate } from '../../utils/navigation';
 
 const headClass = 'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400';
 const cellClass = 'px-4 py-3 text-sm text-slate-100';
@@ -56,8 +57,18 @@ const MarketTable = () => {
     return data?.items?.map((coin: MarketCoin) => coin.symbol) ?? [];
   }, [data?.items]);
 
-  // Subscribe to realtime prices
-  const { prices: realtimePrices } = useRealtimePrices(symbols);
+  // Use global WebSocket
+  const { prices: realtimePrices, subscribe, unsubscribe } = useGlobalWebSocket();
+
+  // Subscribe to current page symbols
+  useEffect(() => {
+    if (symbols.length > 0) {
+      subscribe(symbols);
+      return () => {
+        unsubscribe(symbols);
+      };
+    }
+  }, [symbols, subscribe, unsubscribe]);
 
   // Merge realtime prices with static data
   const rows: (MarketCoin | undefined)[] = useMemo(() => {
@@ -123,7 +134,6 @@ const MarketTable = () => {
             {rows.map((coin, index) => (
               <tr key={coin?.symbol ?? index} className="hover:bg-white/5 cursor-pointer" onClick={() => {
                 if (coin) {
-                  const { navigate } = require('../../utils/navigation');
                   navigate(`/coin/${coin.symbol}`);
                 }
               }}>

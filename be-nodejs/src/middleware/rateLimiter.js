@@ -28,7 +28,9 @@ const createRoleBasedLimiter = (defaultMax, limits) => {
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
-      // Skip rate limiting for health checks and admin
+      // Skip rate limiting entirely in development mode
+      if (isDevelopment) return true;
+      // Skip rate limiting for health checks and admin in production
       return req.path === '/health' || getUserRole(req) === 'admin';
     }
   });

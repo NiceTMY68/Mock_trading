@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/auth';
 import { getRecentActivity, Activity } from '../../api/activity';
 import { formatDistanceToNow } from 'date-fns';
+import { navigate } from '../../utils/navigation';
+import { DocumentTextIcon, ChatBubbleLeftRightIcon, StarIcon, BellIcon, BookmarkIcon } from '@heroicons/react/24/outline';
 
 const RecentActivityPanel = () => {
   const { isAuthenticated } = useAuthStore();
@@ -34,7 +36,6 @@ const RecentActivityPanel = () => {
   };
 
   const handleActivityClick = (activity: Activity) => {
-    const { navigate } = require('../../utils/navigation');
     if (activity.metadata?.postId) {
       navigate(`/posts/${activity.metadata.postId}`);
     } else if (activity.metadata?.symbol) {

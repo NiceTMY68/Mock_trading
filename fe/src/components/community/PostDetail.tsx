@@ -6,6 +6,7 @@ import * as postsAPI from '../../api/posts';
 import { formatDistanceToNow } from 'date-fns';
 import CommentList from './CommentList';
 import CreateCommentForm from './CreateCommentForm';
+import { Linkify } from '../../utils/linkify';
 
 const PostDetail = () => {
   // Get ID from URL
@@ -157,7 +158,9 @@ const PostDetail = () => {
 
         {/* Content */}
         <div className="prose prose-invert max-w-none mb-6">
-          <p className="text-slate-300 whitespace-pre-wrap leading-relaxed">{post.content}</p>
+          <p className="text-slate-300 whitespace-pre-wrap leading-relaxed">
+            <Linkify>{post.content}</Linkify>
+          </p>
         </div>
 
         {/* Reactions */}

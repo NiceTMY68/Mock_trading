@@ -179,7 +179,12 @@ class BinanceWebSocketClient {
         }
 
         // Emit event for WebSocket clients (will be handled by priceStream.js)
-        logger.debug(`Price update for ${symbol}: $${priceData.price} (${priceData.priceChangePercent > 0 ? '+' : ''}${priceData.priceChangePercent.toFixed(2)}%)`);
+        // Log every 10 seconds to avoid spam
+        const now = Date.now();
+        if (!this.lastLogTime || now - this.lastLogTime > 10000) {
+          this.lastLogTime = now;
+          logger.info(`📊 Binance price: ${symbol} = $${priceData.price} (${priceData.priceChangePercent > 0 ? '+' : ''}${priceData.priceChangePercent.toFixed(2)}%)`);
+        }
         this.emitPriceUpdate(priceData);
       }
     }
@@ -196,18 +201,21 @@ class BinanceWebSocketClient {
     if (this.onPriceUpdate) {
       this.onPriceUpdate(priceData);
       broadcasted = true;
-      logger.debug(`Price update for ${priceData.symbol} sent via onPriceUpdate callback`);
     }
     
     // Also try global broadcaster if available
     if (typeof global !== 'undefined' && global.priceBroadcaster) {
       global.priceBroadcaster(priceData);
       broadcasted = true;
-      logger.debug(`Price update for ${priceData.symbol} sent via global broadcaster`);
     }
     
+    // Only warn once every 30 seconds if no broadcaster
     if (!broadcasted) {
-      logger.warn(`Price update for ${priceData.symbol} was not broadcasted - no broadcaster available`);
+      const now = Date.now();
+      if (!this.lastBroadcastWarnTime || now - this.lastBroadcastWarnTime > 30000) {
+        this.lastBroadcastWarnTime = now;
+        logger.warn(`⚠️ Price updates not being broadcasted - no broadcaster available`);
+      }
     }
   }
 

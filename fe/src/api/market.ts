@@ -103,7 +103,7 @@ export const fetchMarketList = async (params: {
 export const fetchQuoteAssets = async (): Promise<string[]> => {
   const response = await apiClient.get<ApiResponse<{ quotes: string[] }>>('/market/quotes');
   const data = unwrap(response);
-  return Array.isArray(data.quotes) ? data.quotes : data;
+  return Array.isArray(data.quotes) ? data.quotes : [];
 };
 
 export const fetchKlines = async (params: {

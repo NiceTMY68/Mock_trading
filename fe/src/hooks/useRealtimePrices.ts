@@ -1,83 +1,32 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useWebSocket } from './useWebSocket';
-import { useAuthStore } from '../store/auth';
+import { useEffect, useMemo } from 'react';
+import { useGlobalWebSocket } from '../contexts/WebSocketContext';
 
-type PriceUpdate = {
-  symbol: string;
-  price: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-  priceChange: number;
-  priceChangePercent: number;
-  timestamp: string;
-};
-
-type PriceMap = Record<string, PriceUpdate>;
-
+/**
+ * Hook to get realtime prices using the global WebSocket context
+ * @param symbols - Array of symbols to subscribe to (e.g., ['BTCUSDT', 'ETHUSDT'])
+ */
 export const useRealtimePrices = (symbols: string[] = []) => {
-  const [prices, setPrices] = useState<PriceMap>({});
-  const [isConnected, setIsConnected] = useState(false);
+  const { prices, isConnected, subscribe, unsubscribe } = useGlobalWebSocket();
 
-  const handleMessage = useCallback((message: any) => {
-    if (message.type === 'price') {
-      const update: PriceUpdate = {
-        symbol: (message.symbol || '').toUpperCase(),
-        price: message.price || 0,
-        open: message.open || 0,
-        high: message.high || 0,
-        low: message.low || 0,
-        close: message.close || 0,
-        volume: message.volume || 0,
-        priceChange: message.priceChange || 0,
-        priceChangePercent: message.priceChangePercent || 0,
-        timestamp: message.timestamp || message.sentAt || new Date().toISOString()
-      };
+  // Memoize symbols to prevent unnecessary re-renders
+  const normalizedSymbols = useMemo(() => 
+    symbols.filter(s => s && s.trim()).map(s => s.toUpperCase().trim()),
+    [symbols.join(',')]
+  );
 
-      setPrices((prev) => ({
-        ...prev,
-        [update.symbol]: update
-      }));
-      
-      // Debug log in development
-      if (import.meta.env.DEV) {
-        console.log(`📊 Price update: ${update.symbol} = $${update.price} (${update.priceChangePercent > 0 ? '+' : ''}${update.priceChangePercent.toFixed(2)}%)`);
-      }
-    } else if (message.type === 'connected') {
-      setIsConnected(true);
-      console.log('✅ WebSocket connected to price stream');
-    } else if (message.type === 'subscribed') {
-      console.log('✅ Subscribed to symbols:', message.symbols);
-    }
-  }, []);
-
-  const { token } = useAuthStore();
-  
-  const { isConnected: wsConnected, subscribe, unsubscribe } = useWebSocket({
-    token: token || null,
-    onMessage: handleMessage,
-    onConnect: () => setIsConnected(true),
-    onDisconnect: () => setIsConnected(false)
-  });
-
+  // Subscribe to symbols when they change
   useEffect(() => {
-    // Only subscribe if WebSocket is connected
-    if (wsConnected && symbols.length > 0) {
-      subscribe(symbols);
+    if (normalizedSymbols.length > 0) {
+      subscribe(normalizedSymbols);
       return () => {
-        if (wsConnected) {
-          unsubscribe(symbols);
-        }
+        unsubscribe(normalizedSymbols);
       };
     }
-  }, [wsConnected, symbols, subscribe, unsubscribe]);
+  }, [normalizedSymbols, subscribe, unsubscribe]);
 
   return {
     prices,
-    isConnected: wsConnected && isConnected,
+    isConnected,
     getPrice: (symbol: string) => prices[symbol.toUpperCase()]
   };
 };
-

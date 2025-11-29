@@ -16,7 +16,6 @@ function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // Redirect non-admin users
   useEffect(() => {
     if (isAuthenticated && user && user.role !== 'admin') {
       alert('Access denied. Admin privileges required.');
@@ -24,14 +23,10 @@ function App() {
     }
   }, [isAuthenticated, user]);
 
-  // Show login if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
-      setShowLoginModal(true);
-    }
+    if (!isAuthenticated) setShowLoginModal(true);
   }, [isAuthenticated]);
 
-  // Parse URL path for routing
   useEffect(() => {
     const path = window.location.pathname.slice(1) as Page;
     if (path && ['dashboard', 'users', 'posts', 'security', 'alerts', 'announcements'].includes(path)) {
@@ -39,7 +34,6 @@ function App() {
     }
   }, []);
 
-  // Update URL when page changes
   const navigate = (page: Page) => {
     setCurrentPage(page);
     window.history.pushState({}, '', `/${page}`);

@@ -123,7 +123,7 @@ export class UserModel {
       db.query(`SELECT COUNT(*) as count FROM posts WHERE user_id = $1`, [userId]),
       db.query(`SELECT COUNT(*) as count FROM comments WHERE user_id = $1`, [userId]),
       db.query(`SELECT COUNT(*) as count FROM watchlists WHERE user_id = $1`, [userId]),
-      db.query(`SELECT COUNT(*) as count FROM alerts WHERE user_id = $1 AND is_active = true`, [userId])
+      db.query(`SELECT COUNT(*) as count FROM alerts WHERE user_id = $1 AND active = true`, [userId])
     ]);
 
     return {

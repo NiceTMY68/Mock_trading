@@ -174,10 +174,10 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
                               </p>
                             </div>
                             <span className={`text-sm font-medium ${
-                              (coin.priceChangePercent || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                              (coin.change24h || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
                             }`}>
-                              {(coin.priceChangePercent || 0) >= 0 ? '+' : ''}
-                              {coin.priceChangePercent?.toFixed(2)}%
+                              {(coin.change24h || 0) >= 0 ? '+' : ''}
+                              {coin.change24h?.toFixed(2)}%
                             </span>
                           </button>
                         ))}
@@ -201,7 +201,7 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
                                 {post.title}
                               </p>
                               <p className="text-sm text-slate-400 truncate">
-                                by {post.author_name}
+                                by {post.author.name}
                               </p>
                             </div>
                           </button>

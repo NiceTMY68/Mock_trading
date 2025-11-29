@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { FlagIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../store/auth';
 import { createReport, CreateReportRequest } from '../../api/reports';
 
@@ -7,9 +8,10 @@ interface ReportButtonProps {
   targetType: 'post' | 'comment' | 'user';
   targetId: number;
   onSuccess?: () => void;
+  variant?: 'button' | 'menuItem';
 }
 
-const ReportButton = ({ targetType, targetId, onSuccess }: ReportButtonProps) => {
+const ReportButton = ({ targetType, targetId, onSuccess, variant = 'button' }: ReportButtonProps) => {
   const { isAuthenticated } = useAuthStore();
   const [showModal, setShowModal] = useState(false);
   const [reason, setReason] = useState('');
@@ -56,12 +58,22 @@ const ReportButton = ({ targetType, targetId, onSuccess }: ReportButtonProps) =>
 
   return (
     <>
-      <button
-        onClick={() => setShowModal(true)}
-        className="text-xs text-slate-400 hover:text-rose-400 transition"
-      >
-        Report
-      </button>
+      {variant === 'menuItem' ? (
+        <button
+          onClick={() => setShowModal(true)}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-rose-400 hover:bg-rose-500/10 transition-colors"
+        >
+          <FlagIcon className="w-5 h-5" />
+          Báo cáo
+        </button>
+      ) : (
+        <button
+          onClick={() => setShowModal(true)}
+          className="text-xs text-slate-400 hover:text-rose-400 transition"
+        >
+          Report
+        </button>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">

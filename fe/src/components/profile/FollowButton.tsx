@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/auth';
 import { followUser, unfollowUser, checkFollowStatus, FollowStatus } from '../../api/follow';
@@ -20,11 +20,15 @@ const FollowButton = ({ userId, onStatusChange }: FollowButtonProps) => {
   const { data: followStatus } = useQuery<FollowStatus>({
     queryKey: ['follow-status', userId],
     queryFn: () => checkFollowStatus(userId),
-    enabled: isAuthenticated && !isOwnProfile,
-    onSuccess: (data) => {
-      setIsFollowing(data.isFollowing);
-    }
+    enabled: isAuthenticated && !isOwnProfile
   });
+
+  // Update local state when query data changes (replaces deprecated onSuccess)
+  useEffect(() => {
+    if (followStatus) {
+      setIsFollowing(followStatus.isFollowing);
+    }
+  }, [followStatus]);
 
   const followMutation = useMutation({
     mutationFn: () => followUser(userId),

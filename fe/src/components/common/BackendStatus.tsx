@@ -37,8 +37,8 @@ const BackendStatus = () => {
     };
 
     checkBackend();
-    // Check every 10 seconds (more frequent to catch when backend comes online)
-    const interval = setInterval(checkBackend, 10000);
+    // Check every 30 seconds - less spam, backend rarely goes down during development
+    const interval = setInterval(checkBackend, 30000);
     return () => clearInterval(interval);
   }, []);
 

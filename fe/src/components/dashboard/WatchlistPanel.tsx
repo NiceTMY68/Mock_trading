@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useWatchlistStore, useWatchlists, useWatchlistSymbols } from '../../store/watchlist';
 import { useAuthStore } from '../../store/auth';
 import { formatCurrency, formatPercent, humanizeSymbol } from '../../utils/format';
-import { useRealtimePrices } from '../../hooks/useRealtimePrices';
+import { useGlobalWebSocket } from '../../contexts/WebSocketContext';
 
 const WatchlistPanel = () => {
   const [input, setInput] = useState('');
@@ -31,8 +31,18 @@ const WatchlistPanel = () => {
     ? watchlists.find((w: any) => w.id === activeWatchlistId)
     : null;
 
-  // Use realtime prices
-  const { prices: realtimePrices, isConnected } = useRealtimePrices(symbols);
+  // Use global WebSocket
+  const { prices: realtimePrices, isConnected, subscribe, unsubscribe } = useGlobalWebSocket();
+
+  // Subscribe to watchlist symbols
+  useEffect(() => {
+    if (isConnected && symbols.length > 0) {
+      subscribe(symbols);
+      return () => {
+        unsubscribe(symbols);
+      };
+    }
+  }, [isConnected, symbols, subscribe, unsubscribe]);
 
   const handleAdd = async () => {
     if (!input.trim()) return;

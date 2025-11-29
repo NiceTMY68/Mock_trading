@@ -10,7 +10,7 @@ export class PriceWebSocketClient {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 3000;
-  private reconnectTimeout: NodeJS.Timeout | null = null;
+  private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private subscriptions = new Set<string>();
   private listeners = new Map<string, Set<(data: any) => void>>();
 

@@ -5,6 +5,7 @@ import PageLayout from '../components/layout/PageLayout';
 import Link from '../components/common/Link';
 import { getNotifications, markAsRead, markAllAsRead, deleteNotification, Notification } from '../api/notifications';
 import { formatDistanceToNow } from 'date-fns';
+import { BellIcon, ChatBubbleLeftRightIcon, ChatBubbleLeftIcon, HandThumbUpIcon, Cog6ToothIcon, MegaphoneIcon } from '@heroicons/react/24/outline';
 
 const NotificationsPage = () => {
   const { isAuthenticated } = useAuthStore();
@@ -16,8 +17,7 @@ const NotificationsPage = () => {
     queryFn: () =>
       getNotifications({
         limit: 50,
-        unreadOnly: filter === 'unread',
-        type: null
+        unreadOnly: filter === 'unread'
       }),
     enabled: isAuthenticated,
     refetchInterval: 30_000

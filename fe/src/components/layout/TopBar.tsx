@@ -8,7 +8,9 @@ import {
   UserCircleIcon,
   SignalIcon,
   ArrowRightOnRectangleIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  Cog6ToothIcon,
+  BookmarkIcon
 } from '@heroicons/react/24/outline';
 import { useWatchlistStore } from '../../store/watchlist';
 import { useAuthStore } from '../../store/auth';
@@ -157,6 +159,32 @@ const TopBar = () => {
                             >
                               <UserCircleIcon className="w-4 h-4" />
                               Profile
+                            </Link>
+                          )}
+                        </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <Link
+                              href="/bookmarks"
+                              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+                                active ? 'bg-white/10 text-white' : 'text-slate-300'
+                              }`}
+                            >
+                              <BookmarkIcon className="w-4 h-4" />
+                              Đã lưu
+                            </Link>
+                          )}
+                        </Menu.Item>
+                        <Menu.Item>
+                          {({ active }) => (
+                            <Link
+                              href="/settings"
+                              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+                                active ? 'bg-white/10 text-white' : 'text-slate-300'
+                              }`}
+                            >
+                              <Cog6ToothIcon className="w-4 h-4" />
+                              Cài đặt
                             </Link>
                           )}
                         </Menu.Item>

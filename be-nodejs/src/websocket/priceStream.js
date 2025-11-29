@@ -15,6 +15,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
  */
 export const setupPriceStream = (wss, onPriceUpdate) => {
   const subscriptions = new Map(); // Map<ws, Set<symbols>>
+  const pendingBinanceSubscriptions = new Set(); // Queue for symbols to subscribe when Binance connects
+  const noSubscriberWarnings = new Map(); // Track last warning time per symbol to avoid spam
 
   wss.on('connection', (ws, req) => {
     const clientIp = req.socket.remoteAddress;
@@ -152,7 +154,24 @@ export const setupPriceStream = (wss, onPriceUpdate) => {
         await binanceWS.subscribe(binanceSymbols);
         logger.info(`✅ Subscribed to Binance WebSocket for symbols: ${normalizedSymbols.join(', ')}`);
       } else {
-        logger.warn('Binance WebSocket not connected, cannot subscribe to new symbols');
+        // Queue for later when Binance connects
+        binanceSymbols.forEach(s => pendingBinanceSubscriptions.add(s));
+        logger.info(`⏳ Queued Binance subscriptions (Binance not ready): ${normalizedSymbols.join(', ')}`);
+        
+        // Try to subscribe after a delay (Binance should be connected by then)
+        setTimeout(async () => {
+          const binanceWSRetry = getBinanceWebSocket();
+          if (binanceWSRetry && binanceWSRetry.isConnected && pendingBinanceSubscriptions.size > 0) {
+            const symbolsToSubscribe = Array.from(pendingBinanceSubscriptions);
+            try {
+              await binanceWSRetry.subscribe(symbolsToSubscribe);
+              logger.info(`✅ [Retry] Subscribed to Binance: ${symbolsToSubscribe.join(', ')}`);
+              pendingBinanceSubscriptions.clear();
+            } catch (err) {
+              logger.error('Error in delayed Binance subscription:', err);
+            }
+          }
+        }, 3000);
       }
     } catch (error) {
       logger.error('Error subscribing to Binance WebSocket:', error);
@@ -262,9 +281,13 @@ export const setupPriceStream = (wss, onPriceUpdate) => {
     if (broadcastCount > 0) {
       logger.info(`✅ Broadcasted ${symbol} price $${currentPrice} to ${broadcastCount}/${totalClients} clients`);
     } else if (totalClients > 0) {
-      logger.warn(`⚠️  No clients subscribed to ${symbol} (${totalClients} total clients, subscriptions: ${[...new Set(subscribedSymbolsList)].join(', ') || 'none'})`);
-    } else {
-      logger.debug(`No clients connected for ${symbol} price update`);
+      // Only log warning once per symbol every 60 seconds to avoid spam
+      const now = Date.now();
+      const lastWarning = noSubscriberWarnings.get(symbol) || 0;
+      if (now - lastWarning > 60000) {
+        noSubscriberWarnings.set(symbol, now);
+        logger.warn(`⚠️  No clients subscribed to ${symbol} (${totalClients} clients, their subs: ${[...new Set(subscribedSymbolsList)].slice(0, 5).join(', ')}...)`);
+      }
     }
   }
 

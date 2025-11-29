@@ -1,5 +1,13 @@
 import apiClient from './client';
 
+export interface PostImage {
+  id: number;
+  url: string;
+  thumbnailUrl?: string;
+  width?: number;
+  height?: number;
+}
+
 export interface Post {
   id: number;
   userId: number;
@@ -12,6 +20,12 @@ export interface Post {
   authorAvatar?: string;
   commentsCount?: number;
   reactionsCount?: number;
+  viewCount?: number;
+  bookmarkCount?: number;
+  images?: PostImage[];
+  hashtags?: string[];
+  userReaction?: string | null;
+  isBookmarked?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,17 +52,18 @@ export interface Reaction {
   createdAt: string;
 }
 
-export interface PostWithDetails extends Post {
+export interface PostWithDetails extends Omit<Post, 'userReaction'> {
   reactions: Reaction[];
   comments: Comment[];
   userReaction?: Reaction | null;
 }
 
 export interface CreatePostRequest {
-  title: string;
+  title?: string;
   content: string;
   tags?: string[];
   mentions?: string[];
+  imageIds?: number[];
 }
 
 export interface UpdatePostRequest {
@@ -57,6 +72,7 @@ export interface UpdatePostRequest {
   tags?: string[];
   mentions?: string[];
   status?: 'draft' | 'published' | 'archived';
+  imageIds?: number[];
 }
 
 export interface CreateCommentRequest {
@@ -75,6 +91,8 @@ export const getPosts = async (params?: {
   sortBy?: string;
   order?: string;
   search?: string;
+  followingOnly?: boolean;
+  hashtag?: string;
 }): Promise<{ posts: Post[]; pagination: any }> => {
   const response = await apiClient.get('/posts', { params });
   return response.data.data;
@@ -164,4 +182,3 @@ export const getReactions = async (postId: number): Promise<{
   const response = await apiClient.get(`/posts/${postId}/reactions`);
   return response.data.data;
 };
-

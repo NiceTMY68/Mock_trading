@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { globalSearch, SearchResults } from '../../api/search';
+import { navigateWithQuery } from '../../utils/navigation';
 
 interface SearchBarProps {
   onResultClick?: () => void;
@@ -45,7 +46,6 @@ const SearchBar = ({ onResultClick, compact = false }: SearchBarProps) => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && query.trim().length >= 2) {
-      const { navigateWithQuery } = require('../../utils/navigation');
       navigateWithQuery('/search', { q: query });
       setIsOpen(false);
     } else if (e.key === 'Escape') {

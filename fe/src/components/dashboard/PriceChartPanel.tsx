@@ -86,8 +86,8 @@ const PriceChartPanel = () => {
           {ticker ? (
             <div className="flex items-baseline gap-2 text-white">
               <p className="text-3xl font-bold">{formatCurrency(ticker.price, { maximumFractionDigits: 6 })}</p>
-              <span className={ticker.priceChangePercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                {formatPercent(ticker.priceChangePercent)}
+              <span className={(ticker.priceChangePercent ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                {formatPercent(ticker.priceChangePercent ?? 0)}
               </span>
             </div>
           ) : (

@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/auth';
 import { getNotifications, Notification } from '../../api/notifications';
 import { formatDistanceToNow } from 'date-fns';
+import { navigate } from '../../utils/navigation';
+import { BellIcon, MegaphoneIcon, ChatBubbleLeftRightIcon, HandThumbUpIcon, Cog6ToothIcon, BookmarkIcon } from '@heroicons/react/24/outline';
 
 const NotificationsPanel = () => {
   const { isAuthenticated } = useAuthStore();
@@ -42,7 +44,6 @@ const NotificationsPanel = () => {
   };
 
   const handleNotificationClick = (notification: Notification) => {
-    const { navigate } = require('../../utils/navigation');
     if (notification.data?.postId) {
       navigate(`/posts/${notification.data.postId}`);
     } else if (notification.data?.symbol) {

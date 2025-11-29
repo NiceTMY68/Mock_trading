@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import CreateCommentForm from './CreateCommentForm';
 import PublicProfileView from '../profile/PublicProfileView';
 import ReportButton from './ReportButton';
+import { Linkify } from '../../utils/linkify';
 
 interface CommentListProps {
   postId: number;
@@ -14,11 +15,12 @@ interface CommentListProps {
   onReply?: (commentId: number) => void;
 }
 
-const CommentItem = ({ comment, postId, onReply, depth = 0 }: { 
+const CommentItem = ({ comment, postId, onReply, depth = 0, allComments }: { 
   comment: Comment; 
   postId: number;
   onReply?: (commentId: number) => void;
   depth?: number;
+  allComments: Comment[];
 }) => {
   const { isAuthenticated, user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -26,6 +28,9 @@ const CommentItem = ({ comment, postId, onReply, depth = 0 }: {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [showProfile, setShowProfile] = useState(false);
+  
+  // Filter replies for this comment
+  const replies = allComments.filter(c => c.parentId === comment.id);
 
   const deleteCommentMutation = useMutation({
     mutationFn: () => postsAPI.deleteComment(comment.id),
@@ -43,7 +48,6 @@ const CommentItem = ({ comment, postId, onReply, depth = 0 }: {
   });
 
   const isAuthor = isAuthenticated && user?.id === comment.userId;
-  const replies = comments.filter(c => c.parentId === comment.id);
 
   const handleDelete = () => {
     if (confirm('Delete this comment?')) {
@@ -127,7 +131,9 @@ const CommentItem = ({ comment, postId, onReply, depth = 0 }: {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-slate-300 whitespace-pre-wrap">{comment.content}</p>
+          <p className="text-sm text-slate-300 whitespace-pre-wrap">
+            <Linkify>{comment.content}</Linkify>
+          </p>
         )}
 
         {/* Actions */}
@@ -169,6 +175,7 @@ const CommentItem = ({ comment, postId, onReply, depth = 0 }: {
               postId={postId}
               onReply={onReply}
               depth={depth + 1}
+              allComments={allComments}
             />
           ))}
         </div>
@@ -206,6 +213,7 @@ const CommentList = ({ postId, comments, onReply }: CommentListProps) => {
           comment={comment}
           postId={postId}
           onReply={onReply}
+          allComments={comments}
         />
       ))}
     </div>

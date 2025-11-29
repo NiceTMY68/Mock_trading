@@ -7,6 +7,7 @@ import { MarketCoin } from '../../types';
 import { formatCurrency, formatPercent, humanizeSymbol } from '../../utils/format';
 import { useWatchlistStore } from '../../store/watchlist';
 import { useRealtimePrices } from '../../hooks/useRealtimePrices';
+import { navigate } from '../../utils/navigation';
 
 const tabs = [
   {
@@ -128,7 +129,6 @@ const MarketHighlights = () => {
                   key={coin?.symbol ?? index}
                   onClick={() => {
                     if (!coin) return;
-                    const { navigate } = require('../../utils/navigation');
                     navigate(`/coin/${coin.symbol}`);
                   }}
                   className="group flex flex-col rounded-2xl border border-white/5 bg-white/5 p-4 text-left transition hover:-translate-y-1 hover:border-emerald-300/40 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400"
