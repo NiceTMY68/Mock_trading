@@ -6,7 +6,7 @@ class NewsService {
   constructor() {
     this.apiKey = process.env.NEWS_API_KEY;
     this.apiUrl = process.env.NEWS_API_URL || 'https://newsdata.io/api/1';
-    this.cacheTTL = 15 * 60; // 15 minutes in seconds
+    this.cacheTTL = 15 * 60;
     
     if (!this.apiKey) {
       logger.warn('NEWS_API_KEY is not set. News features will not work.');
@@ -32,11 +32,9 @@ class NewsService {
       nextPage = null
     } = options;
 
-    // Create cache key
     const cacheKey = `news:crypto:${language}:${nextPage || 'first'}:${size}`;
 
     try {
-      // Check cache first
       const redis = getRedis();
       if (redis) {
         const cached = await redis.get(cacheKey);
@@ -46,24 +44,19 @@ class NewsService {
         }
       }
 
-      // Check if API key is set
       if (!this.apiKey) {
         throw new Error('NEWS_API_KEY is not configured');
       }
 
-      // Build query parameters
-      // Note: NewsData.io free tier doesn't support 'category' parameter
-      // Use 'q' parameter to search for crypto-related news instead
       const params = {
         apikey: this.apiKey,
         q: category === 'crypto' 
           ? 'crypto OR cryptocurrency OR bitcoin OR ethereum OR blockchain OR defi OR nft'
-          : category, // Allow custom search terms
+          : category,
         language: language,
-        size: Math.min(size, 10) // Free tier max is 10 articles per request
+        size: Math.min(size, 10)
       };
 
-      // Use nextPage token if provided (for pagination)
       if (nextPage) {
         params.nextPage = nextPage;
       }
@@ -72,14 +65,12 @@ class NewsService {
         params.country = country;
       }
 
-      // Fetch from API
       logger.info(`Fetching crypto news from NewsData.io${nextPage ? ' (nextPage)' : ' (first page)'}`);
       const response = await axios.get(`${this.apiUrl}/news`, {
         params,
-        timeout: 10000 // 10 seconds timeout
+        timeout: 10000
       });
 
-      // Log response for debugging
       logger.debug('NewsData.io response status:', response.data.status);
       
       if (response.data.status === 'success') {
@@ -91,37 +82,29 @@ class NewsService {
           timestamp: new Date().toISOString()
         };
 
-        // Cache the result
         if (redis) {
           await redis.setEx(cacheKey, this.cacheTTL, JSON.stringify(newsData));
         }
 
         return newsData;
       } else {
-        // Handle error response from NewsData.io
         const errorMsg = response.data.results?.message || response.data.message || 'Failed to fetch news';
         logger.error('NewsData.io API error:', errorMsg, response.data);
         throw new Error(errorMsg);
       }
     } catch (error) {
-      // Log detailed error information
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         logger.error('NewsData.io API error response:', {
           status: error.response.status,
           statusText: error.response.statusText,
           data: error.response.data
         });
       } else if (error.request) {
-        // The request was made but no response was received
         logger.error('NewsData.io API request error: No response received', error.request);
       } else {
-        // Something happened in setting up the request that triggered an Error
         logger.error('Error fetching crypto news:', error.message);
       }
       
-      // Try to return cached data if available
       try {
         const redis = getRedis();
         if (redis) {
@@ -135,7 +118,6 @@ class NewsService {
         logger.error('Error reading cache:', cacheError);
       }
 
-      // Re-throw with more context
       const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch news from NewsData.io';
       throw new Error(errorMessage);
     }
@@ -156,7 +138,6 @@ class NewsService {
     const cacheKey = `news:search:${keyword}:${language}:${page}:${size}`;
 
     try {
-      // Check cache
       const redis = getRedis();
       if (redis) {
         const cached = await redis.get(cacheKey);
@@ -166,13 +147,11 @@ class NewsService {
         }
       }
 
-      // Build query
-      // Note: NewsData.io free tier doesn't support page parameter or category filter
       const params = {
         apikey: this.apiKey,
         q: keyword,
         language: language,
-        size: Math.min(size, 10) // Free tier max is 10 articles per request
+        size: Math.min(size, 10)
       };
 
       logger.info(`Searching news for: ${keyword}`);
@@ -191,7 +170,6 @@ class NewsService {
           timestamp: new Date().toISOString()
         };
 
-        // Cache for shorter time (5 minutes for search results)
         if (redis) {
           await redis.setEx(cacheKey, 5 * 60, JSON.stringify(newsData));
         }
@@ -215,7 +193,6 @@ class NewsService {
   }
 }
 
-// Singleton instance
 let newsService = null;
 
 export const getNewsService = () => {

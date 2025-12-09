@@ -10,10 +10,10 @@ class BinanceWebSocketClient {
     this.reconnectAttempts = 0;
     this.subscribedSymbols = new Set();
     this.isConnected = false;
-    this.priceCache = new Map(); // In-memory cache for latest prices
-    this.connectionStartTime = null; // Track connection time for 24h limit
-    this.requestId = 0; // For SUBSCRIBE/UNSUBSCRIBE requests
-    this.reconnectTimer = null; // Timer for 24h reconnection
+    this.priceCache = new Map();
+    this.connectionStartTime = null;
+    this.requestId = 0;
+    this.reconnectTimer = null;
   }
 
   /**
@@ -26,22 +26,17 @@ class BinanceWebSocketClient {
       return;
     }
 
-    // Normalize symbols to lowercase
     const normalizedSymbols = symbols.map(s => s.toLowerCase());
     this.subscribedSymbols = new Set(normalizedSymbols);
 
-    // Create stream names for Binance
     const streams = normalizedSymbols.map(symbol => `${symbol}@ticker`);
     const streamNames = streams.join('/');
-
-    // Use combined stream endpoint according to Binance docs
-    // https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams
     const wsUrl = `wss://stream.binance.com:9443/stream?streams=${streamNames}`;
 
     try {
       logger.info(`Connecting to Binance WebSocket: ${streamNames}`);
       this.ws = new WebSocket(wsUrl, {
-        perMessageDeflate: false // Disable compression for better performance
+        perMessageDeflate: false
       });
 
       this.ws.on('open', () => {
@@ -50,8 +45,6 @@ class BinanceWebSocketClient {
         this.reconnectAttempts = 0;
         this.connectionStartTime = Date.now();
         
-        // Schedule reconnection before 24h limit (reconnect after 23 hours)
-        // According to Binance docs: connection is valid for 24 hours
         if (this.reconnectTimer) {
           clearTimeout(this.reconnectTimer);
         }
@@ -59,12 +52,10 @@ class BinanceWebSocketClient {
           logger.info('Reconnecting before 24h limit (23 hours elapsed)');
           this.disconnect();
           this.connect(Array.from(this.subscribedSymbols));
-        }, 23 * 60 * 60 * 1000); // 23 hours in milliseconds
+        }, 23 * 60 * 60 * 1000);
       });
 
-      // Handle ping/pong frames (Binance sends ping every 20 seconds)
       this.ws.on('ping', (data) => {
-        // Respond to ping with pong (copy ping payload)
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           this.ws.pong(data);
           logger.debug('Responded to Binance ping with pong');
@@ -72,9 +63,7 @@ class BinanceWebSocketClient {
       });
 
       this.ws.on('message', (data) => {
-        // Check if it's a ping frame (not JSON)
         if (data instanceof Buffer && data.length <= 4) {
-          // Likely a ping frame, respond with pong
           if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.pong();
             logger.debug('Responded to Binance ping frame');
@@ -85,7 +74,6 @@ class BinanceWebSocketClient {
         try {
           const message = JSON.parse(data.toString());
           
-          // Handle SUBSCRIBE/UNSUBSCRIBE responses
           if (message.id !== undefined && message.result !== undefined) {
             if (message.result === null) {
               logger.debug(`Binance request ${message.id} succeeded`);
@@ -95,16 +83,13 @@ class BinanceWebSocketClient {
             return;
           }
 
-          // Handle error responses
           if (message.error) {
             logger.error('Binance WebSocket error:', message.error);
             return;
           }
 
-          // Handle data messages
           this.handleMessage(message);
         } catch (error) {
-          // If not JSON, might be a ping frame
           logger.debug('Non-JSON message received (likely ping frame)');
         }
       });
@@ -122,7 +107,6 @@ class BinanceWebSocketClient {
         this.isConnected = false;
         this.connectionStartTime = null;
         
-        // Reconnect if not a normal closure
         if (code !== 1000) {
           this.reconnect(normalizedSymbols);
         }
@@ -140,27 +124,23 @@ class BinanceWebSocketClient {
   async handleMessage(message) {
     if (message.stream && message.data) {
       const { stream, data } = message;
-      
-      // Extract symbol from stream name (e.g., "btcusdt@ticker" -> "btcusdt")
       const symbol = stream.split('@')[0].toUpperCase();
       
-      // Process ticker data
       if (stream.includes('@ticker')) {
         const priceData = {
           symbol: symbol,
-          price: parseFloat(data.c), // Last price
+          price: parseFloat(data.c),
           open: parseFloat(data.o),
           high: parseFloat(data.h),
           low: parseFloat(data.l),
           close: parseFloat(data.c),
           volume: parseFloat(data.v),
-          priceChange: parseFloat(data.p) || 0, // Price change (absolute)
-          priceChangePercent: parseFloat(data.P) || 0, // Price change percent
+          priceChange: parseFloat(data.p) || 0,
+          priceChangePercent: parseFloat(data.P) || 0,
           timestamp: new Date().toISOString(),
           binanceTimestamp: data.E
         };
 
-        // Update cache
         this.priceCache.set(symbol, priceData);
 
         // Cache in Redis (silently fail if Redis is not available)
@@ -168,18 +148,14 @@ class BinanceWebSocketClient {
           const redis = getRedis();
           if (redis && redis.isOpen) {
             const cacheKey = `binance:price:${symbol.toLowerCase()}`;
-            await redis.setEx(cacheKey, 60, JSON.stringify(priceData)); // 60 seconds TTL
+            await redis.setEx(cacheKey, 60, JSON.stringify(priceData));
           }
         } catch (error) {
-          // Silently ignore Redis errors - app works without cache
-          // Only log if it's not a connection error
           if (!error.message?.includes('closed') && !error.message?.includes('ClientClosedError')) {
             logger.warn('Failed to cache price in Redis:', error.message);
           }
         }
 
-        // Emit event for WebSocket clients (will be handled by priceStream.js)
-        // Log every 10 seconds to avoid spam
         const now = Date.now();
         if (!this.lastLogTime || now - this.lastLogTime > 10000) {
           this.lastLogTime = now;
@@ -190,12 +166,7 @@ class BinanceWebSocketClient {
     }
   }
 
-  /**
-   * Emit price update to connected clients
-   * This will be handled by the WebSocket server
-   */
   emitPriceUpdate(priceData) {
-    // This will be connected to the WebSocket server in index.js
     let broadcasted = false;
     
     if (this.onPriceUpdate) {
@@ -203,13 +174,11 @@ class BinanceWebSocketClient {
       broadcasted = true;
     }
     
-    // Also try global broadcaster if available
     if (typeof global !== 'undefined' && global.priceBroadcaster) {
       global.priceBroadcaster(priceData);
       broadcasted = true;
     }
     
-    // Only warn once every 30 seconds if no broadcaster
     if (!broadcasted) {
       const now = Date.now();
       if (!this.lastBroadcastWarnTime || now - this.lastBroadcastWarnTime > 30000) {
@@ -219,9 +188,6 @@ class BinanceWebSocketClient {
     }
   }
 
-  /**
-   * Reconnect logic
-   */
   reconnect(symbols) {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       logger.error('Max reconnection attempts reached. Stopping reconnection.');
@@ -236,10 +202,6 @@ class BinanceWebSocketClient {
     }, this.reconnectInterval);
   }
 
-  /**
-   * Subscribe to additional symbols using SUBSCRIBE method (without reconnecting)
-   * According to Binance docs: https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams
-   */
   async subscribe(symbols) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       logger.warn('Cannot subscribe: Binance WebSocket not connected');
@@ -254,10 +216,7 @@ class BinanceWebSocketClient {
       return;
     }
 
-    // Create stream names for Binance
     const streams = newSymbols.map(symbol => `${symbol}@ticker`);
-    
-    // Use SUBSCRIBE method according to Binance documentation
     const subscribeRequest = {
       method: 'SUBSCRIBE',
       params: streams,
@@ -274,9 +233,6 @@ class BinanceWebSocketClient {
     }
   }
 
-  /**
-   * Unsubscribe from symbols using UNSUBSCRIBE method (without reconnecting)
-   */
   async unsubscribe(symbols) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       logger.warn('Cannot unsubscribe: WebSocket not connected');
@@ -293,7 +249,6 @@ class BinanceWebSocketClient {
       return;
     }
 
-    // Use UNSUBSCRIBE method according to Binance documentation
     const unsubscribeRequest = {
       method: 'UNSUBSCRIBE',
       params: streamsToUnsubscribe,
@@ -310,23 +265,14 @@ class BinanceWebSocketClient {
     }
   }
 
-  /**
-   * Get latest price from cache
-   */
   getLatestPrice(symbol) {
     return this.priceCache.get(symbol.toUpperCase());
   }
 
-  /**
-   * Get all cached prices
-   */
   getAllPrices() {
     return Object.fromEntries(this.priceCache);
   }
 
-  /**
-   * Disconnect from Binance WebSocket
-   */
   async disconnect() {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -342,7 +288,6 @@ class BinanceWebSocketClient {
   }
 }
 
-// Singleton instance
 let binanceWSClient = null;
 
 export const getBinanceWebSocket = () => {

@@ -90,7 +90,7 @@ class BinanceService {
           logger.warn(`Binance API timeout/error on ${this.getBaseUrl()}, switching to fallback...`);
           this.switchToFallback();
         } else {
-          throw error; // Don't retry on non-network errors
+          throw error;
         }
       }
     }
@@ -343,7 +343,7 @@ class BinanceService {
         lastUpdateId: data.lastUpdateId
       };
 
-      await this.setCachedValue(cacheKey, 5, orderBook); // 5 seconds TTL
+      await this.setCachedValue(cacheKey, 5, orderBook);
 
       return orderBook;
     } catch (error) {
@@ -380,7 +380,7 @@ class BinanceService {
         isBuyerMaker: trade.isBuyerMaker
       }));
 
-      await this.setCachedValue(cacheKey, 2, trades); // 2 seconds TTL
+      await this.setCachedValue(cacheKey, 2, trades);
 
       return trades;
     } catch (error) {
@@ -390,12 +390,8 @@ class BinanceService {
   }
 }
 
-// Singleton instance
 let binanceServiceInstance = null;
 
-/**
- * Get BinanceService singleton instance
- */
 export const getBinanceService = () => {
   if (!binanceServiceInstance) {
     binanceServiceInstance = new BinanceService();

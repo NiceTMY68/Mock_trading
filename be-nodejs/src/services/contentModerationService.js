@@ -11,12 +11,9 @@ class ContentModerationService {
   constructor() {
     this.bannedKeywords = [];
     this.lastRefresh = null;
-    this.refreshInterval = 5 * 60 * 1000; // Refresh every 5 minutes
+    this.refreshInterval = 5 * 60 * 1000;
   }
 
-  /**
-   * Load banned keywords from database
-   */
   async loadBannedKeywords() {
     try {
       const db = getDatabase();
@@ -28,17 +25,12 @@ class ContentModerationService {
       logger.info(`Loaded ${this.bannedKeywords.length} banned keywords`);
     } catch (error) {
       logger.error('Failed to load banned keywords:', error);
-      // Use cached keywords if available
       if (this.bannedKeywords.length === 0) {
-        // Fallback to hardcoded critical patterns
         this.bannedKeywords = this.getHardcodedPatterns();
       }
     }
   }
 
-  /**
-   * Hardcoded patterns as fallback
-   */
   getHardcodedPatterns() {
     return [
       { keyword: 'send.*receive.*double', category: 'scam', severity: 'high', is_regex: true },
@@ -49,9 +41,6 @@ class ContentModerationService {
     ];
   }
 
-  /**
-   * Ensure keywords are loaded and fresh
-   */
   async ensureKeywordsLoaded() {
     if (!this.lastRefresh || Date.now() - this.lastRefresh > this.refreshInterval) {
       await this.loadBannedKeywords();
@@ -61,25 +50,20 @@ class ContentModerationService {
   /**
    * Normalize text for better matching
    * - Remove special characters used to bypass filters (d.i.t → dit)
-   * - Convert to lowercase
    * - Handle Unicode lookalikes
    */
   normalizeText(text) {
     let normalized = text.toLowerCase();
     
-    // Remove dots, dashes, underscores between letters (bypass attempts)
     normalized = normalized.replace(/(\w)[.\-_*@#!]+(\w)/g, '$1$2');
     
-    // Unicode lookalike replacements
     const unicodeMap = {
-      // Latin lookalikes
-      'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x', // Cyrillic
-      '𝐚': 'a', '𝐛': 'b', '𝐜': 'c', '𝐝': 'd', '𝐞': 'e', // Math bold
-      '𝕒': 'a', '𝕓': 'b', '𝕔': 'c', '𝕕': 'd', '𝕖': 'e', // Double-struck
-      'ａ': 'a', 'ｂ': 'b', 'ｃ': 'c', 'ｄ': 'd', 'ｅ': 'e', // Fullwidth
+      'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x',
+      '𝐚': 'a', '𝐛': 'b', '𝐜': 'c', '𝐝': 'd', '𝐞': 'e',
+      '𝕒': 'a', '𝕓': 'b', '𝕔': 'c', '𝕕': 'd', '𝕖': 'e',
+      'ａ': 'a', 'ｂ': 'b', 'ｃ': 'c', 'ｄ': 'd', 'ｅ': 'e',
       '①': '1', '②': '2', '③': '3', '④': '4', '⑤': '5',
       '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
-      // Common substitutions
       '@': 'a', '4': 'a', '3': 'e', '1': 'i', '0': 'o', '$': 's', '5': 's',
     };
     
@@ -87,17 +71,11 @@ class ContentModerationService {
       normalized = normalized.replace(new RegExp(from, 'g'), to);
     }
     
-    // Remove zero-width characters
     normalized = normalized.replace(/[\u200B-\u200D\uFEFF]/g, '');
     
     return normalized;
   }
 
-  /**
-   * Check content for violations
-   * @param {string} content - Content to check (title + body combined)
-   * @returns {Object} { isClean: boolean, violations: Array, severity: string }
-   */
   async checkContent(content) {
     await this.ensureKeywordsLoaded();
 
@@ -111,16 +89,13 @@ class ContentModerationService {
       if (keyword.is_regex) {
         try {
           const regex = new RegExp(keyword.keyword, 'gi');
-          // Check both normalized and original
           isMatch = regex.test(normalizedContent) || regex.test(originalLower);
         } catch (e) {
-          // Invalid regex, treat as plain text
           const keywordLower = keyword.keyword.toLowerCase();
           isMatch = normalizedContent.includes(keywordLower) || originalLower.includes(keywordLower);
         }
       } else {
         const keywordLower = keyword.keyword.toLowerCase();
-        // Check both normalized and original
         isMatch = normalizedContent.includes(keywordLower) || originalLower.includes(keywordLower);
       }
 
@@ -134,7 +109,6 @@ class ContentModerationService {
       }
     }
 
-    // Determine overall severity
     let overallSeverity = 'none';
     if (violations.length > 0) {
       const severityOrder = ['low', 'medium', 'high', 'critical'];
@@ -153,25 +127,16 @@ class ContentModerationService {
     };
   }
 
-  /**
-   * Flag a post for admin review
-   * @param {number} postId - Post ID
-   * @param {string} flagType - 'auto_detected' or 'user_reported'
-   * @param {Array} matchedKeywords - Keywords that matched
-   * @param {string} severity - Severity level
-   */
   async flagPost(postId, flagType, matchedKeywords = [], severity = 'medium') {
     try {
       const db = getDatabase();
       
-      // Check if already flagged
       const existing = await db.query(
         'SELECT id FROM content_flags WHERE post_id = $1 AND status = $2',
         [postId, 'pending']
       );
 
       if (existing.rows.length > 0) {
-        // Update existing flag
         await db.query(
           `UPDATE content_flags 
            SET matched_keywords = array_cat(matched_keywords, $1),
@@ -185,7 +150,6 @@ class ContentModerationService {
         return existing.rows[0].id;
       }
 
-      // Create new flag
       const result = await db.query(
         `INSERT INTO content_flags (post_id, flag_type, matched_keywords, severity)
          VALUES ($1, $2, $3, $4)
@@ -201,12 +165,6 @@ class ContentModerationService {
     }
   }
 
-  /**
-   * Approve a flagged post (admin action)
-   * @param {number} flagId - Flag ID
-   * @param {number} adminId - Admin user ID
-   * @param {string} notes - Review notes
-   */
   async approvePost(flagId, adminId, notes = '') {
     try {
       const db = getDatabase();
@@ -226,9 +184,6 @@ class ContentModerationService {
   /**
    * Reject/Remove a flagged post (admin action)
    * Moves post to removed_posts table and updates user trust level
-   * @param {number} flagId - Flag ID
-   * @param {number} adminId - Admin user ID
-   * @param {string} reason - Removal reason
    */
   async rejectPost(flagId, adminId, reason = '') {
     const db = getDatabase();
@@ -236,7 +191,6 @@ class ContentModerationService {
     try {
       await db.query('BEGIN');
 
-      // Get flag and post details
       const flagResult = await db.query(
         `SELECT cf.*, p.user_id, p.title, p.content, p.tags, p.created_at as original_created_at
          FROM content_flags cf
@@ -251,7 +205,6 @@ class ContentModerationService {
 
       const flag = flagResult.rows[0];
 
-      // Move post to removed_posts
       await db.query(
         `INSERT INTO removed_posts 
          (original_post_id, user_id, title, content, tags, removal_reason, matched_keywords, removed_by, original_created_at)
@@ -269,7 +222,6 @@ class ContentModerationService {
         ]
       );
 
-      // Update flag status
       await db.query(
         `UPDATE content_flags 
          SET status = 'rejected', reviewed_by = $1, reviewed_at = NOW(), review_notes = $2
@@ -277,10 +229,8 @@ class ContentModerationService {
         [adminId, reason, flagId]
       );
 
-      // Delete post from posts table
       await db.query('DELETE FROM posts WHERE id = $1', [flag.post_id]);
 
-      // Update user's removed posts count
       await db.query(
         `UPDATE users 
          SET removed_posts_count = removed_posts_count + 1
@@ -288,7 +238,6 @@ class ContentModerationService {
         [flag.user_id]
       );
 
-      // Check if user should be marked as low trust (>= 3 removed posts)
       const userResult = await db.query(
         'SELECT removed_posts_count FROM users WHERE id = $1',
         [flag.user_id]
@@ -311,10 +260,6 @@ class ContentModerationService {
     }
   }
 
-  /**
-   * Get pending flags for admin review
-   * @param {Object} options - Pagination options
-   */
   async getPendingFlags(options = {}) {
     const { page = 0, size = 20, flagType = null } = options;
     const db = getDatabase();
@@ -355,7 +300,6 @@ class ContentModerationService {
 
     const result = await db.query(query, params);
 
-    // Get total count
     const countResult = await db.query(
       `SELECT COUNT(*) as total FROM content_flags WHERE status = 'pending'${flagType ? ' AND flag_type = $1' : ''}`,
       flagType ? [flagType] : []
@@ -369,9 +313,6 @@ class ContentModerationService {
     };
   }
 
-  /**
-   * Get moderation statistics
-   */
   async getStats() {
     const db = getDatabase();
 
@@ -396,7 +337,6 @@ class ContentModerationService {
   }
 }
 
-// Singleton instance
 let moderationService = null;
 
 export const getContentModerationService = () => {

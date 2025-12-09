@@ -2,7 +2,7 @@ import { getBinanceService } from './binanceService.js';
 import { logger } from '../utils/logger.js';
 
 const binanceService = getBinanceService();
-const IN_MEMORY_CACHE_TTL = 15 * 1000; // 15 seconds
+const IN_MEMORY_CACHE_TTL = 15 * 1000;
 
 let enrichedCache = {
   data: null,
@@ -41,10 +41,8 @@ const enrichTickers = async () => {
 
   const enriched = tickers.map((ticker) => {
     const meta = symbolMap[ticker.symbol] || {};
-    // Calculate approximate market cap from 24h volume * price
-    // Note: This is a rough estimate. Real market cap requires circulating supply data
     const estimatedMarketCap = ticker.quoteVolume && ticker.lastPrice 
-      ? ticker.quoteVolume * ticker.lastPrice * 0.1 // Rough estimate: 10% of 24h volume
+      ? ticker.quoteVolume * ticker.lastPrice * 0.1
       : null;
     
     return {
@@ -57,8 +55,8 @@ const enrichTickers = async () => {
       priceChangePercent: ticker.priceChangePercent,
       volume: ticker.volume,
       quoteVolume: ticker.quoteVolume,
-      count: ticker.count || 0, // Trade count (number of trades in 24h)
-      marketCap: estimatedMarketCap, // Estimated market cap (can be null if not available)
+      count: ticker.count || 0,
+      marketCap: estimatedMarketCap,
       openTime: ticker.openTime,
       closeTime: ticker.closeTime,
       baseAsset: meta.baseAsset || null,
@@ -147,12 +145,10 @@ export const getPaginatedMarketList = async ({
   const tickers = await enrichTickers();
   let filtered = tickers;
 
-  // Filter by quote asset
   if (quote) {
     filtered = filtered.filter((item) => item.quoteAsset === quote.toUpperCase());
   }
 
-  // Filter by market cap range
   if (minMarketCap !== null) {
     filtered = filtered.filter((item) => item.marketCap !== null && item.marketCap >= parseFloat(minMarketCap));
   }
@@ -160,7 +156,6 @@ export const getPaginatedMarketList = async ({
     filtered = filtered.filter((item) => item.marketCap !== null && item.marketCap <= parseFloat(maxMarketCap));
   }
 
-  // Filter by volume range
   if (minVolume !== null) {
     filtered = filtered.filter((item) => item.quoteVolume >= parseFloat(minVolume));
   }
@@ -168,7 +163,6 @@ export const getPaginatedMarketList = async ({
     filtered = filtered.filter((item) => item.quoteVolume <= parseFloat(maxVolume));
   }
 
-  // Filter by trade count range
   if (minTradeCount !== null) {
     filtered = filtered.filter((item) => item.count >= parseInt(minTradeCount));
   }
