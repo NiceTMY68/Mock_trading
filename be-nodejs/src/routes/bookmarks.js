@@ -1,7 +1,3 @@
-/**
- * Bookmark Routes
- */
-
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { apiLimiter } from '../middleware/rateLimiter.js';

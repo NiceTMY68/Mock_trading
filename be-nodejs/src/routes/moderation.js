@@ -1,8 +1,3 @@
-/**
- * Moderation Routes
- * 
- * Admin-only routes for content moderation
- */
 
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';

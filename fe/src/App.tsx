@@ -2,10 +2,8 @@ import { useEffect, useState } from 'react';
 import DashboardPage from './pages/DashboardPage';
 import CommunityPage from './pages/CommunityPage';
 import PostDetailPage from './pages/PostDetailPage';
-import AlertsPage from './pages/AlertsPage';
 import CoinDetailPage from './pages/CoinDetailPage';
 import NewsPage from './pages/NewsPage';
-import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import AnonymousLandingPage from './pages/AnonymousLandingPage';
@@ -29,9 +27,7 @@ function App() {
     if (path.startsWith('/community')) return 'community';
     if (path.startsWith('/posts/')) return 'post-detail';
     if (path.startsWith('/coin/') || path.startsWith('/coins/')) return 'coin-detail';
-    if (path.startsWith('/alerts')) return 'alerts';
     if (path.startsWith('/news')) return 'news';
-    if (path.startsWith('/notifications')) return 'notifications';
     if (path.startsWith('/profile')) return 'profile';
     if (path.startsWith('/search')) return 'search';
     if (path.startsWith('/bookmarks')) return 'bookmarks';
@@ -65,10 +61,8 @@ function App() {
       {currentPage === 'dashboard' && <DashboardPage />}
       {currentPage === 'community' && <CommunityPage />}
       {currentPage === 'post-detail' && <PostDetailPage />}
-      {currentPage === 'alerts' && <AlertsPage />}
       {currentPage === 'coin-detail' && <CoinDetailPage />}
       {currentPage === 'news' && <NewsPage />}
-      {currentPage === 'notifications' && <NotificationsPage />}
       {currentPage === 'profile' && <ProfilePage />}
       {currentPage === 'search' && <SearchPage />}
       {currentPage === 'bookmarks' && <BookmarksPage />}

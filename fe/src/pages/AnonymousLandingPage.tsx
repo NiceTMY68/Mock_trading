@@ -40,32 +40,32 @@ const AnonymousLandingPage = () => {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-4 py-2 mb-6">
               <CheckCircleIcon className="w-4 h-4 text-emerald-400" />
-              <span className="text-sm font-medium text-emerald-400">100% Miễn phí • Không cần thẻ tín dụng</span>
+              <span className="text-sm font-medium text-emerald-400">100% Free • No credit card required</span>
             </div>
             
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              Theo dõi thị trường Crypto
-              <span className="block text-emerald-400 mt-2">Real-time & Miễn phí</span>
+              Track Crypto Markets
+              <span className="block text-emerald-400 mt-2">Real-time & Free</span>
             </h1>
             
             <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-8">
-              Khám phá thị trường crypto với dữ liệu real-time từ Binance. 
-              Đọc tin tức, tham gia cộng đồng và theo dõi các coin yêu thích.
+              Explore crypto markets with real-time data from Binance. 
+              Read news, join the community and track your favorite coins.
             </p>
 
             {/* Market Stats */}
             {overview && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
                 <div className="rounded-xl border border-white/10 bg-slate-900/60 p-4">
-                  <p className="text-sm text-slate-400 mb-1">Tổng số coin</p>
+                  <p className="text-sm text-slate-400 mb-1">Total Coins</p>
                   <p className="text-2xl font-bold text-white">{overview.totalSymbols.toLocaleString()}</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-slate-900/60 p-4">
-                  <p className="text-sm text-slate-400 mb-1">Tổng volume 24h</p>
+                  <p className="text-sm text-slate-400 mb-1">Total 24h Volume</p>
                   <p className="text-2xl font-bold text-white">{formatCurrency(overview.totalVolume)}</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-slate-900/60 p-4 col-span-2 md:col-span-1">
-                  <p className="text-sm text-slate-400 mb-1">Tổng trades 24h</p>
+                  <p className="text-sm text-slate-400 mb-1">Total 24h Trades</p>
                   <p className="text-2xl font-bold text-white">{overview.totalTrades.toLocaleString()}</p>
                 </div>
               </div>
@@ -98,7 +98,7 @@ const AnonymousLandingPage = () => {
         {/* Features Section */}
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-white/10">
           <h2 className="text-3xl font-bold text-white text-center mb-12">
-            Tại sao chọn chúng tôi?
+            Why Choose Us?
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -106,9 +106,9 @@ const AnonymousLandingPage = () => {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-400 transition group-hover:bg-emerald-400/20">
                 <ChartBarIcon className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Dữ liệu Real-time</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">Real-time Data</h3>
               <p className="text-slate-400">
-                Cập nhật giá real-time từ Binance WebSocket. Theo dõi thị trường với độ trễ thấp nhất.
+                Real-time price updates from Binance WebSocket. Track markets with the lowest latency.
               </p>
             </div>
             
@@ -116,9 +116,9 @@ const AnonymousLandingPage = () => {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-400 transition group-hover:bg-emerald-400/20">
                 <NewspaperIcon className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Tin tức Crypto</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">Crypto News</h3>
               <p className="text-slate-400">
-                Đọc tin tức crypto mới nhất từ các nguồn uy tín. Tìm kiếm và lọc theo category.
+                Read the latest crypto news from trusted sources. Search and filter by category.
               </p>
             </div>
             
@@ -126,9 +126,9 @@ const AnonymousLandingPage = () => {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-400 transition group-hover:bg-emerald-400/20">
                 <ChatBubbleLeftRightIcon className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Cộng đồng</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">Community</h3>
               <p className="text-slate-400">
-                Tham gia thảo luận, chia sẻ ý kiến và học hỏi từ cộng đồng crypto.
+                Join discussions, share opinions and learn from the crypto community.
               </p>
             </div>
           </div>
@@ -137,15 +137,15 @@ const AnonymousLandingPage = () => {
         {/* Quick Start */}
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-t border-white/10">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">Bắt đầu ngay</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">Get Started Now</h2>
             <p className="text-slate-400 mb-8">
-              Khám phá thị trường ngay bây giờ, không cần đăng ký
+              Explore markets right now, no registration required
             </p>
             <a
               href="/dashboard"
               className="inline-block rounded-lg bg-emerald-400 px-8 py-3 text-lg font-semibold text-slate-900 shadow-lg shadow-emerald-400/30 hover:bg-emerald-300 transition"
             >
-              Xem Dashboard →
+              View Dashboard →
             </a>
           </div>
         </section>

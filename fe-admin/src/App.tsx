@@ -6,10 +6,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminPosts from './pages/AdminPosts';
 import AdminSecurity from './pages/AdminSecurity';
-import AdminAlerts from './pages/AdminAlerts';
 import AdminAnnouncements from './pages/AdminAnnouncements';
 
-type Page = 'dashboard' | 'users' | 'posts' | 'security' | 'alerts' | 'announcements';
+type Page = 'dashboard' | 'users' | 'posts' | 'security' | 'announcements';
 
 function App() {
   const { isAuthenticated, user } = useAuthStore();
@@ -29,7 +28,7 @@ function App() {
 
   useEffect(() => {
     const path = window.location.pathname.slice(1) as Page;
-    if (path && ['dashboard', 'users', 'posts', 'security', 'alerts', 'announcements'].includes(path)) {
+    if (path && ['dashboard', 'users', 'posts', 'security', 'announcements'].includes(path)) {
       setCurrentPage(path);
     }
   }, []);
@@ -57,7 +56,6 @@ function App() {
       {currentPage === 'users' && <AdminUsers />}
       {currentPage === 'posts' && <AdminPosts />}
       {currentPage === 'security' && <AdminSecurity />}
-      {currentPage === 'alerts' && <AdminAlerts />}
       {currentPage === 'announcements' && <AdminAnnouncements />}
     </AdminLayout>
   );

@@ -1,9 +1,3 @@
-/**
- * TrendingPage
- * 
- * Hiển thị trending posts và hashtags
- */
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
@@ -66,8 +60,8 @@ const TrendingPage = () => {
               <FireIcon className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Xu hướng</h1>
-              <p className="text-slate-400">Khám phá nội dung nổi bật trong cộng đồng</p>
+              <h1 className="text-3xl font-bold text-white">Trending</h1>
+              <p className="text-slate-400">Discover trending content in the community</p>
             </div>
           </div>
 
@@ -84,7 +78,7 @@ const TrendingPage = () => {
                 }`}
               >
                 <ArrowTrendingUpIcon className="w-4 h-4" />
-                Bài viết
+                Posts
               </button>
               <button
                 onClick={() => setActiveTab('hashtags')}
@@ -168,7 +162,7 @@ const TrendingPage = () => {
                       className="px-5 py-2.5 rounded-xl bg-white/5 text-slate-300 
                                hover:bg-white/10 disabled:opacity-50 transition-colors"
                     >
-                      Sau
+                      Next
                     </button>
                   </div>
                 )}
@@ -211,10 +205,10 @@ const TrendingPage = () => {
                           #{tag.name}
                         </h3>
                         <p className="text-sm text-slate-500 mt-1">
-                          {tag.postCount} bài viết
+                          {tag.postCount} posts
                           {tag.recentPosts > 0 && (
                             <span className="text-emerald-400 ml-2">
-                              +{tag.recentPosts} mới
+                              +{tag.recentPosts} new
                             </span>
                           )}
                         </p>

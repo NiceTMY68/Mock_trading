@@ -1,7 +1,3 @@
-/**
- * Trending Routes
- */
-
 import express from 'express';
 import { optionalAuth, authenticate } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/roleMiddleware.js';

@@ -1,9 +1,3 @@
-/**
- * BookmarkButton Component
- * 
- * Animated bookmark button with collection picker
- */
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BookmarkIcon as BookmarkOutline } from '@heroicons/react/24/outline';
@@ -120,7 +114,7 @@ const BookmarkButton = ({
           ${isAnimating ? 'scale-125' : ''}
           disabled:opacity-50
         `}
-        title={isBookmarked ? 'Bỏ lưu' : 'Lưu bài viết (click phải để chọn bộ sưu tập)'}
+        title={isBookmarked ? 'Unsave' : 'Save post (right-click to choose collection)'}
       >
         {/* Icon with animation */}
         <span className={`relative ${isAnimating ? 'animate-bookmark-pop' : ''}`}>
@@ -153,13 +147,13 @@ const BookmarkButton = ({
           />
           <div className="absolute right-0 bottom-full mb-2 z-20 w-48 py-2 rounded-xl 
                         bg-slate-800 border border-white/10 shadow-xl animate-slide-up">
-            <p className="px-3 py-1 text-xs text-slate-400 font-medium">Lưu vào bộ sưu tập</p>
+            <p className="px-3 py-1 text-xs text-slate-400 font-medium">Save to collection</p>
             
             <button
               onClick={() => { addMutation.mutate('default'); setShowPicker(false); }}
               className="w-full px-3 py-2 text-left text-sm text-white hover:bg-white/5 transition-colors"
             >
-              📑 Mặc định
+              📑 Default
             </button>
             
             {collections.map((col) => (
@@ -176,7 +170,7 @@ const BookmarkButton = ({
             <div className="border-t border-white/10 mt-2 pt-2">
               <button
                 onClick={() => {
-                  const name = prompt('Tên bộ sưu tập mới:');
+                  const name = prompt('New collection name:');
                   if (name) {
                     addMutation.mutate(name);
                     setShowPicker(false);
@@ -184,7 +178,7 @@ const BookmarkButton = ({
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-emerald-400 hover:bg-white/5 transition-colors"
               >
-                ➕ Tạo bộ sưu tập mới
+                ➕ Create new collection
               </button>
             </div>
           </div>

@@ -1,12 +1,3 @@
-/**
- * PostList Component - Enhanced
- * 
- * Features:
- * - Sort by latest, trending
- * - Filter by following
- * - Infinite scroll ready
- */
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/auth';
@@ -115,15 +106,15 @@ const PostList = ({
     return (
       <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-8 text-center">
         <ExclamationTriangleIcon className="w-12 h-12 text-rose-400 mx-auto mb-3" />
-        <p className="text-rose-400 font-medium mb-2">Không thể tải bài viết</p>
-        <p className="text-rose-400/70 text-sm mb-4">Vui lòng thử lại sau</p>
+        <p className="text-rose-400 font-medium mb-2">Failed to load posts</p>
+        <p className="text-rose-400/70 text-sm mb-4">Please try again later</p>
         <button
           onClick={() => refetch()}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/20 
                    text-rose-400 hover:bg-rose-500/30 transition-colors"
         >
           <ArrowPathIcon className="w-4 h-4" />
-          Thử lại
+          Retry
         </button>
       </div>
     );
@@ -139,14 +130,14 @@ const PostList = ({
         <ChatBubbleLeftEllipsisIcon className="w-16 h-16 text-slate-500 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-white mb-2">
           {showFollowingOnly 
-            ? 'Chưa có bài viết từ người bạn theo dõi'
-            : 'Chưa có bài viết nào'
+            ? 'No posts from users you follow'
+            : 'No posts yet'
           }
         </h3>
         <p className="text-slate-400 text-sm mb-4">
           {showFollowingOnly
-            ? 'Theo dõi thêm người dùng để xem bài viết của họ'
-            : 'Hãy là người đầu tiên chia sẻ suy nghĩ!'
+            ? 'Follow more users to see their posts'
+            : 'Be the first to share your thoughts!'
           }
         </p>
         {!isAuthenticated && (
@@ -155,7 +146,7 @@ const PostList = ({
             className="px-4 py-2 rounded-xl bg-emerald-500 text-white font-medium 
                      hover:bg-emerald-600 transition-colors"
           >
-            Đăng nhập để đăng bài
+            Login to create a post
           </button>
         )}
       </div>
@@ -168,7 +159,7 @@ const PostList = ({
       {isFetching && !isLoading && (
         <div className="flex items-center justify-center gap-2 py-2 text-sm text-slate-400">
           <ArrowPathIcon className="w-4 h-4 animate-spin" />
-          Đang cập nhật...
+          Updating...
         </div>
       )}
 
@@ -230,7 +221,7 @@ const PostList = ({
                      text-white hover:bg-white/5 hover:border-white/20
                      disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            Sau
+            Next
           </button>
         </div>
       )}

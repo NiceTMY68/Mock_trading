@@ -1,7 +1,3 @@
-/**
- * Upload Routes
- */
-
 import express from 'express';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { apiLimiter } from '../middleware/rateLimiter.js';

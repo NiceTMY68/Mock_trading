@@ -19,10 +19,6 @@ export interface DashboardStats {
     total: number;
     pending: number;
   };
-  alerts: {
-    total: number;
-    active: number;
-  };
 }
 
 export interface AdminUser {
@@ -226,20 +222,6 @@ export const getCacheStats = async (): Promise<{
   return response.data.data.stats;
 };
 
-/**
- * Get all alerts (admin)
- */
-export const getAllAlerts = async (params: {
-  page?: number;
-  size?: number;
-  userId?: number;
-  symbol?: string;
-  isActive?: boolean;
-  search?: string;
-} = {}): Promise<{ alerts: any[]; pagination: PaginationMeta }> => {
-  const response = await apiClient.get<ApiResponse<{ alerts: any[]; pagination: PaginationMeta }>>('/admin/alerts', { params });
-  return response.data.data;
-};
 
 /**
  * Get failed login attempts (admin)

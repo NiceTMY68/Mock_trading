@@ -14,13 +14,9 @@ import { logger } from './utils/logger.js';
 import authRoutes from './routes/auth.js';
 import marketRoutes from './routes/market.js';
 import newsRoutes from './routes/news.js';
-import blogRoutes from './routes/blogs.js';
 import watchlistRoutes from './routes/watchlists.js';
-import portfolioRoutes from './routes/portfolio.js';
 import postRoutes from './routes/posts.js';
 import commentRoutes from './routes/comments.js';
-import alertRoutes from './routes/alerts.js';
-import notificationRoutes from './routes/notifications.js';
 import searchRoutes from './routes/search.js';
 import userRoutes from './routes/users.js';
 import activityRoutes from './routes/activity.js';
@@ -40,10 +36,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Create HTTP server for WebSocket
 const server = createServer(app);
 
-// Initialize services
 let dbInitialized = false;
 let redisInitialized = false;
 
@@ -71,7 +65,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true }));
+
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'];
+
+app.use(cors({ 
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      if (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
+  credentials: true 
+}));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -97,13 +112,9 @@ app.get('/api', apiLimiter, (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/news', newsRoutes);
-app.use('/api/blogs', blogRoutes);
 app.use('/api/watchlists', watchlistRoutes);
-app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
-app.use('/api/alerts', alertRoutes);
-app.use('/api/notifications', notificationRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/activity', activityRoutes);

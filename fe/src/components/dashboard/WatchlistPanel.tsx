@@ -167,7 +167,7 @@ const WatchlistPanel = () => {
 
       {!isAuthenticated && (
         <div className="mt-2 rounded-lg bg-blue-500/10 border border-blue-500/20 px-3 py-2 text-xs text-blue-300">
-          💡 <a href="/login" className="underline">Đăng nhập</a> để lưu watchlist và sync trên nhiều thiết bị
+          💡 <a href="/login" className="underline">Login</a> to save watchlist and sync across devices
         </div>
       )}
 

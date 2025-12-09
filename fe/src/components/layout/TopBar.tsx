@@ -14,7 +14,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { useWatchlistStore } from '../../store/watchlist';
 import { useAuthStore } from '../../store/auth';
-import NotificationBell from '../notifications/NotificationBell';
 import SearchModal from '../search/SearchModal';
 import CoinLabLogo from '../common/CoinLabLogo';
 import Link from '../common/Link';
@@ -98,14 +97,6 @@ const TopBar = () => {
               News
             </Link>
             <Link
-              href="/alerts"
-              activeClassName="border-emerald-400/50 bg-emerald-500/10 text-emerald-300"
-              className="group flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
-            >
-              <BellIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              Alerts
-            </Link>
-            <Link
               href="/community"
               activeClassName="border-purple-400/50 bg-purple-500/10 text-purple-300"
               className="group flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:border-purple-400/50 hover:bg-purple-500/10 hover:text-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-400/50"
@@ -123,7 +114,6 @@ const TopBar = () => {
               <MagnifyingGlassIcon className="w-5 h-5" />
             </button>
             
-            <NotificationBell />
             {isAuthenticated && user && (
               <>
                 <Menu as="div" className="relative">
@@ -171,7 +161,7 @@ const TopBar = () => {
                               }`}
                             >
                               <BookmarkIcon className="w-4 h-4" />
-                              Đã lưu
+                              Saved
                             </Link>
                           )}
                         </Menu.Item>
@@ -184,7 +174,7 @@ const TopBar = () => {
                               }`}
                             >
                               <Cog6ToothIcon className="w-4 h-4" />
-                              Cài đặt
+                              Settings
                             </Link>
                           )}
                         </Menu.Item>

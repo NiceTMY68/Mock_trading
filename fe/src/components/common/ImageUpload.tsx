@@ -1,13 +1,3 @@
-/**
- * ImageUpload Component
- * 
- * Features:
- * - Drag & drop upload
- * - Click to select files
- * - Paste from clipboard
- * - Preview with remove
- * - Progress indicator
- */
 
 import { useState, useRef, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
@@ -179,13 +169,13 @@ const ImageUpload = ({
             
             <div>
               <p className="text-sm font-medium text-white">
-                {isDragging ? 'Thả ảnh vào đây' : 'Kéo thả ảnh hoặc click để chọn'}
+                {isDragging ? 'Drop image here' : 'Drag & drop image or click to select'}
               </p>
               <p className="text-xs text-slate-400 mt-1">
-                Hỗ trợ JPEG, PNG, GIF, WebP • Tối đa 10MB
+                Supports JPEG, PNG, GIF, WebP • Max 10MB
               </p>
               <p className="text-xs text-emerald-400/70 mt-2">
-                💡 Tip: Ctrl+V để dán ảnh từ clipboard
+                💡 Tip: Ctrl+V to paste image from clipboard
               </p>
             </div>
           </div>
@@ -272,7 +262,7 @@ const ImageUpload = ({
                        flex flex-col items-center justify-center gap-2"
             >
               <PhotoIcon className="w-8 h-8 text-slate-400" />
-              <span className="text-xs text-slate-400">Thêm ảnh</span>
+              <span className="text-xs text-slate-400">Add image</span>
             </button>
           )}
         </div>
@@ -281,7 +271,7 @@ const ImageUpload = ({
       {/* Image count */}
       {totalImages > 0 && (
         <p className="text-xs text-slate-400 text-right">
-          {totalImages}/{maxFiles} ảnh
+          {totalImages}/{maxFiles} images
         </p>
       )}
     </div>

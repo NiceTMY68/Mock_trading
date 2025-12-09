@@ -1,9 +1,3 @@
-/**
- * CommunityPage - Enhanced
- * 
- * Main community feed with trending sidebar
- */
-
 import { useState } from 'react';
 import { 
   SparklesIcon, 
@@ -27,9 +21,9 @@ const CommunityPage = () => {
   const [feedTab, setFeedTab] = useState<FeedTab>('latest');
 
   const tabs: { id: FeedTab; label: string; icon: React.ElementType }[] = [
-    { id: 'latest', label: 'Mới nhất', icon: ClockIcon },
-    { id: 'trending', label: 'Nổi bật', icon: FireIcon },
-    { id: 'following', label: 'Đang theo dõi', icon: SparklesIcon },
+    { id: 'latest', label: 'Latest', icon: ClockIcon },
+    { id: 'trending', label: 'Trending', icon: FireIcon },
+    { id: 'following', label: 'Following', icon: SparklesIcon },
   ];
 
   return (
@@ -41,9 +35,9 @@ const CommunityPage = () => {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-white">Cộng đồng</h1>
+                <h1 className="text-2xl font-bold text-white">Community</h1>
                 <p className="text-sm text-slate-400 mt-1">
-                  Chia sẻ và thảo luận về crypto
+                  Share and discuss about crypto
                 </p>
               </div>
 
@@ -57,7 +51,7 @@ const CommunityPage = () => {
                            active:scale-100 transition-all"
                 >
                   <PlusIcon className="w-5 h-5" />
-                  <span className="hidden sm:inline">Đăng bài</span>
+                  <span className="hidden sm:inline">Create Post</span>
                 </button>
               )}
             </div>
@@ -108,7 +102,7 @@ const CommunityPage = () => {
                            border border-white/10 transition-all"
                 >
                   <BookmarkIcon className="w-4 h-4" />
-                  Đã lưu
+                  Saved
                 </button>
               </div>
             )}
@@ -127,7 +121,7 @@ const CommunityPage = () => {
 
               {/* Quick Links */}
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                <h3 className="font-semibold text-white mb-4">Liên kết nhanh</h3>
+                <h3 className="font-semibold text-white mb-4">Quick Links</h3>
                 <div className="space-y-2">
                   <button
                     onClick={() => navigate('/community/trending')}
@@ -135,7 +129,7 @@ const CommunityPage = () => {
                              text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
                   >
                     <FireIcon className="w-5 h-5 text-orange-400" />
-                    <span className="text-sm">Xem tất cả xu hướng</span>
+                    <span className="text-sm">View all trends</span>
                   </button>
                   {isAuthenticated && (
                     <>
@@ -145,7 +139,7 @@ const CommunityPage = () => {
                                  text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
                       >
                         <BookmarkIcon className="w-5 h-5 text-amber-400" />
-                        <span className="text-sm">Bài viết đã lưu</span>
+                        <span className="text-sm">Saved posts</span>
                       </button>
                       <button
                         onClick={() => navigate('/settings')}
@@ -153,7 +147,7 @@ const CommunityPage = () => {
                                  text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
                       >
                         <SparklesIcon className="w-5 h-5 text-purple-400" />
-                        <span className="text-sm">Cài đặt thông báo</span>
+                        <span className="text-sm">Settings</span>
                       </button>
                     </>
                   )}

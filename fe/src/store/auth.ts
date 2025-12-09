@@ -12,7 +12,6 @@ export interface User {
     postsCount: number;
     commentsCount: number;
     watchlistsCount: number;
-    alertsCount: number;
   };
 }
 

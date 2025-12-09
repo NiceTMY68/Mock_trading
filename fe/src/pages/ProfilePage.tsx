@@ -237,10 +237,6 @@ const ProfileTab = ({ user, updateProfileMutation }: { user: any; updateProfileM
               <p className="text-xs text-slate-400 mb-1">Watchlists</p>
               <p className="text-lg font-semibold text-white">{user.stats.watchlistsCount || 0}</p>
             </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-1">Active Alerts</p>
-              <p className="text-lg font-semibold text-white">{user.stats.alertsCount || 0}</p>
-            </div>
           </div>
         )}
 

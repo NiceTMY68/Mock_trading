@@ -10,9 +10,7 @@ export class AdminModel {
       pendingPosts,
       totalComments,
       totalReports,
-      pendingReports,
-      totalAlerts,
-      activeAlerts
+      pendingReports
     ] = await Promise.all([
       db.query(`SELECT COUNT(*) as count FROM users`),
       db.query(`SELECT COUNT(*) as count FROM users WHERE is_active = true`),
@@ -20,9 +18,7 @@ export class AdminModel {
       db.query(`SELECT COUNT(*) as count FROM posts WHERE status = 'pending'`),
       db.query(`SELECT COUNT(*) as count FROM comments`),
       db.query(`SELECT COUNT(*) as count FROM reports`),
-      db.query(`SELECT COUNT(*) as count FROM reports WHERE status = 'pending'`),
-      db.query(`SELECT COUNT(*) as count FROM alerts`),
-      db.query(`SELECT COUNT(*) as count FROM alerts WHERE is_active = true`)
+      db.query(`SELECT COUNT(*) as count FROM reports WHERE status = 'pending'`)
     ]);
 
     const recentRegistrations = await db.query(
@@ -50,10 +46,6 @@ export class AdminModel {
       reports: {
         total: parseInt(totalReports.rows[0].count),
         pending: parseInt(pendingReports.rows[0].count)
-      },
-      alerts: {
-        total: parseInt(totalAlerts.rows[0].count),
-        active: parseInt(activeAlerts.rows[0].count)
       }
     };
   }

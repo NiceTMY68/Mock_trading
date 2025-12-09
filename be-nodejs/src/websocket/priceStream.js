@@ -3,7 +3,6 @@ import { logger } from '../utils/logger.js';
 import jwt from 'jsonwebtoken';
 import { getBinanceWebSocket } from '../services/binanceWebSocket.js';
 import { getWebSocketLimit } from '../middleware/rateLimiter.js';
-import { processPriceUpdate } from '../services/alertTriggerService.js';
 
 // Must match the secret used in authController.js
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -233,13 +232,8 @@ export const setupPriceStream = (wss, onPriceUpdate) => {
     const currentPrice = priceData.price || priceData.close || 0;
     const previousPrice = previousPrices.get(symbol) || null;
 
-    // Check alerts for this price update (async, don't block)
+    // Update previous price
     if (currentPrice > 0) {
-      processPriceUpdate(symbol, currentPrice, previousPrice).catch(error => {
-        logger.error(`Error processing alerts for ${symbol}:`, error);
-      });
-      
-      // Update previous price
       previousPrices.set(symbol, currentPrice);
     }
 

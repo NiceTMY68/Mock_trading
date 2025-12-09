@@ -1,13 +1,3 @@
-/**
- * CreatePostForm - Enhanced
- * 
- * Features:
- * - Image upload with drag & drop
- * - Auto-detect hashtags
- * - Character counter
- * - Beautiful animations
- */
-
 import { useState, useRef, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as postsAPI from '../../api/posts';
@@ -203,7 +193,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
                       flex items-center justify-center">
           <div className="text-center">
             <ArrowUpTrayIcon className="w-12 h-12 text-emerald-400 mx-auto mb-2 animate-bounce" />
-            <p className="text-emerald-400 font-medium">Thả ảnh vào đây</p>
+            <p className="text-emerald-400 font-medium">Drop image here</p>
           </div>
         </div>
       )}
@@ -216,8 +206,8 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
             <SparklesIcon className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-white">Tạo bài viết mới</h3>
-            <p className="text-xs text-slate-500">Chia sẻ suy nghĩ của bạn với cộng đồng</p>
+            <h3 className="font-semibold text-white">Create New Post</h3>
+            <p className="text-xs text-slate-500">Share your thoughts with the community</p>
           </div>
         </div>
 
@@ -226,7 +216,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
           type="text"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          placeholder="Tiêu đề (không bắt buộc)"
+          placeholder="Title (optional)"
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 
                    text-white placeholder:text-slate-500 focus:border-emerald-400/50 
                    focus:ring-2 focus:ring-emerald-400/20 outline-none transition-all"
@@ -239,7 +229,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
             ref={contentRef}
             value={formData.content}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            placeholder="Bạn đang nghĩ gì? Dùng #hashtag để thêm chủ đề..."
+            placeholder="What's on your mind? Use #hashtag to add topics..."
             rows={5}
             className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 
                      text-white placeholder:text-slate-500 focus:border-emerald-400/50 
@@ -302,7 +292,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
                          gap-1 text-slate-400 hover:text-emerald-400 transition-colors"
               >
                 <PhotoIcon className="w-6 h-6" />
-                <span className="text-xs">Thêm</span>
+                <span className="text-xs">Add</span>
               </button>
             )}
           </div>
@@ -313,7 +303,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
           <div className="flex items-center gap-2 text-sm text-emerald-400">
             <div className="w-4 h-4 border-2 border-emerald-400/30 border-t-emerald-400 
                           rounded-full animate-spin" />
-            <span>Đang tải ảnh...</span>
+            <span>Uploading images...</span>
           </div>
         )}
 
@@ -321,7 +311,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
         {showTagsInput && (
           <div className="space-y-3 p-4 rounded-xl bg-white/5 border border-white/10">
             <div>
-              <label className="block text-xs text-slate-400 mb-1.5">Tags thêm (phân cách bằng dấu phẩy)</label>
+              <label className="block text-xs text-slate-400 mb-1.5">Additional tags (comma-separated)</label>
               <input
                 type="text"
                 value={formData.tags}
@@ -365,7 +355,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
             onClick={() => fileInputRef.current?.click()}
             className="p-2.5 rounded-xl text-slate-400 hover:text-emerald-400 
                      hover:bg-emerald-400/10 transition-colors"
-            title="Thêm ảnh (hoặc kéo thả, Ctrl+V)"
+            title="Add image (or drag & drop, Ctrl+V)"
           >
             <PhotoIcon className="w-5 h-5" />
           </button>
@@ -376,7 +366,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
             onClick={insertHashtag}
             className="p-2.5 rounded-xl text-slate-400 hover:text-emerald-400 
                      hover:bg-emerald-400/10 transition-colors"
-            title="Thêm hashtag"
+            title="Add hashtag"
           >
             <HashtagIcon className="w-5 h-5" />
           </button>
@@ -387,7 +377,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
             onClick={insertMention}
             className="p-2.5 rounded-xl text-slate-400 hover:text-blue-400 
                      hover:bg-blue-400/10 transition-colors"
-            title="Thêm mention"
+            title="Add mention"
           >
             <AtSymbolIcon className="w-5 h-5" />
           </button>
@@ -401,7 +391,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
                 ? 'text-emerald-400 bg-emerald-400/10' 
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
-            title="Thêm tùy chọn"
+            title="Add options"
           >
             <FaceSmileIcon className="w-5 h-5" />
           </button>
@@ -430,10 +420,10 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
             {createPostMutation.isPending ? (
               <span className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Đang đăng...
+                Posting...
               </span>
             ) : (
-              'Đăng bài'
+              'Post'
             )}
           </button>
         </div>
@@ -443,7 +433,7 @@ const CreatePostForm = ({ onSuccess, onCancel }: CreatePostFormProps) => {
       {createPostMutation.isError && (
         <div className="px-5 py-3 bg-rose-500/10 border-t border-rose-500/20">
           <p className="text-sm text-rose-400">
-            Có lỗi xảy ra. Vui lòng thử lại.
+            An error occurred. Please try again.
           </p>
         </div>
       )}

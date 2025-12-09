@@ -1,9 +1,3 @@
-/**
- * TrendingSection Component
- * 
- * Hiển thị trending hashtags và posts
- */
-
 import { useQuery } from '@tanstack/react-query';
 import { 
   FireIcon, 
@@ -52,7 +46,7 @@ const TrendingSection = ({ className = '' }: TrendingSectionProps) => {
                         flex items-center justify-center">
             <FireIcon className="w-4 h-4 text-white" />
           </div>
-          <h2 className="font-semibold text-white">Xu hướng</h2>
+          <h2 className="font-semibold text-white">Trending</h2>
         </div>
 
         <div className="space-y-1">
@@ -79,7 +73,7 @@ const TrendingSection = ({ className = '' }: TrendingSectionProps) => {
                   #{tag.name}
                 </p>
                 <p className="text-xs text-slate-500">
-                  {tag.postCount} bài viết
+                  {tag.postCount} posts
                 </p>
               </div>
 
@@ -94,7 +88,7 @@ const TrendingSection = ({ className = '' }: TrendingSectionProps) => {
           className="w-full mt-3 py-2 text-sm text-emerald-400 hover:text-emerald-300 
                    font-medium transition-colors"
         >
-          Xem tất cả →
+          View all →
         </button>
       </section>
 
@@ -106,7 +100,7 @@ const TrendingSection = ({ className = '' }: TrendingSectionProps) => {
                         flex items-center justify-center">
             <ArrowTrendingUpIcon className="w-4 h-4 text-white" />
           </div>
-          <h2 className="font-semibold text-white">Bài viết nổi bật</h2>
+          <h2 className="font-semibold text-white">Trending Posts</h2>
         </div>
 
         <div className="space-y-3">

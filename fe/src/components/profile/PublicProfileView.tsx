@@ -63,7 +63,7 @@ const PublicProfileView = ({ userId, onClose }: PublicProfileViewProps) => {
           </div>
           {profile.bio && <p className="text-slate-400 mb-2">{profile.bio}</p>}
           <p className="text-xs text-slate-500">
-            Thành viên từ {format(new Date(profile.createdAt), 'MMMM yyyy')}
+            Member since {format(new Date(profile.createdAt), 'MMMM yyyy')}
           </p>
         </div>
       </div>
@@ -71,11 +71,11 @@ const PublicProfileView = ({ userId, onClose }: PublicProfileViewProps) => {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 mb-6 p-4 rounded-lg bg-white/5">
         <div>
-          <p className="text-xs text-slate-400 mb-1">Bài viết</p>
+          <p className="text-xs text-slate-400 mb-1">Posts</p>
           <p className="text-lg font-semibold text-white">{profile.stats.postsCount}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-400 mb-1">Bình luận</p>
+          <p className="text-xs text-slate-400 mb-1">Comments</p>
           <p className="text-lg font-semibold text-white">{profile.stats.commentsCount}</p>
         </div>
       </div>
@@ -83,7 +83,7 @@ const PublicProfileView = ({ userId, onClose }: PublicProfileViewProps) => {
       {/* Social Links */}
       {profile.socialLinks && Object.keys(profile.socialLinks).length > 0 && (
         <div>
-          <p className="text-sm font-medium text-slate-300 mb-2">Liên kết</p>
+          <p className="text-sm font-medium text-slate-300 mb-2">Links</p>
           <div className="flex gap-2">
             {profile.socialLinks.twitter && (
               <a

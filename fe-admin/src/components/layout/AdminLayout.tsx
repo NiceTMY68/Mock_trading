@@ -4,14 +4,13 @@ import {
   UsersIcon,
   DocumentTextIcon,
   ShieldExclamationIcon,
-  BellAlertIcon,
   MegaphoneIcon,
   ArrowRightOnRectangleIcon,
   BeakerIcon
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../store/auth';
 
-type Page = 'dashboard' | 'users' | 'posts' | 'security' | 'alerts' | 'announcements';
+type Page = 'dashboard' | 'users' | 'posts' | 'security' | 'announcements';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -27,7 +26,6 @@ const AdminLayout = ({ children, currentPage, onNavigate }: AdminLayoutProps) =>
     { id: 'users', name: 'Users', icon: UsersIcon },
     { id: 'posts', name: 'Posts', icon: DocumentTextIcon },
     { id: 'security', name: 'Security', icon: ShieldExclamationIcon },
-    { id: 'alerts', name: 'Global Alerts', icon: BellAlertIcon },
     { id: 'announcements', name: 'Announcements', icon: MegaphoneIcon },
   ];
 

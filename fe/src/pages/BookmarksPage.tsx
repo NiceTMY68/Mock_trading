@@ -1,9 +1,3 @@
-/**
- * BookmarksPage
- * 
- * Trang hiển thị bài viết đã lưu với bộ lọc collections
- */
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -76,8 +70,8 @@ const BookmarksPage = () => {
             <BookmarkSolid className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Bài viết đã lưu</h1>
-            <p className="text-slate-400 text-sm">{totalBookmarks} bài viết</p>
+            <h1 className="text-2xl font-bold text-white">Saved Posts</h1>
+            <p className="text-slate-400 text-sm">{totalBookmarks} posts</p>
           </div>
         </div>
 
@@ -85,7 +79,7 @@ const BookmarksPage = () => {
           {/* Sidebar - Collections */}
           <aside className="space-y-2">
             <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-3">
-              Bộ sưu tập
+              Collections
             </h2>
             
             {/* All bookmarks */}
@@ -98,7 +92,7 @@ const BookmarksPage = () => {
               }`}
             >
               <BookmarkIcon className="w-5 h-5" />
-              <span className="flex-1 text-left text-sm font-medium">Tất cả</span>
+              <span className="flex-1 text-left text-sm font-medium">All</span>
               <span className="text-xs text-slate-500">{totalBookmarks}</span>
             </button>
 
@@ -115,7 +109,7 @@ const BookmarksPage = () => {
               >
                 <FolderIcon className="w-5 h-5" />
                 <span className="flex-1 text-left text-sm font-medium truncate">
-                  {collection.collection === 'default' ? 'Mặc định' : collection.collection}
+                  {collection.collection === 'default' ? 'Default' : collection.collection}
                 </span>
                 <span className="text-xs text-slate-500">{collection.count}</span>
               </button>
@@ -140,9 +134,9 @@ const BookmarksPage = () => {
                               flex items-center justify-center">
                   <BookmarkIcon className="w-10 h-10 text-slate-500" />
                 </div>
-                <h3 className="text-lg font-medium text-white mb-2">Chưa có bài viết nào</h3>
+                <h3 className="text-lg font-medium text-white mb-2">No saved posts</h3>
                 <p className="text-slate-400 text-sm">
-                  Bài viết bạn lưu sẽ xuất hiện ở đây
+                  Posts you save will appear here
                 </p>
               </div>
             ) : (
@@ -159,7 +153,7 @@ const BookmarksPage = () => {
                         {/* Title */}
                         <h3 className="text-lg font-semibold text-white mb-2 
                                      group-hover:text-emerald-400 transition-colors line-clamp-1">
-                          {bookmark.title || 'Không có tiêu đề'}
+                          {bookmark.title || 'No title'}
                         </h3>
                         
                         {/* Content preview */}
@@ -231,7 +225,7 @@ const BookmarksPage = () => {
                           <option value="">Di chuyển...</option>
                           {collectionsData.map((c) => (
                             <option key={c.collection} value={c.collection}>
-                              {c.collection === 'default' ? 'Mặc định' : c.collection}
+                              {c.collection === 'default' ? 'Default' : c.collection}
                             </option>
                           ))}
                         </select>
@@ -241,7 +235,7 @@ const BookmarksPage = () => {
                           onClick={() => removeMutation.mutate(bookmark.post_id)}
                           className="p-2 rounded-lg hover:bg-rose-500/10 text-slate-400 
                                    hover:text-rose-400 transition-colors"
-                          title="Bỏ lưu"
+                          title="Unsave"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
@@ -270,7 +264,7 @@ const BookmarksPage = () => {
                       className="px-4 py-2 rounded-lg bg-white/5 text-slate-300 
                                hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Sau
+                      Next
                     </button>
                   </div>
                 )}

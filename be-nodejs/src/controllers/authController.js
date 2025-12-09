@@ -435,14 +435,11 @@ export const exportUserData = async (req, res) => {
     const db = getDatabase();
 
     // Get all user data
-    const [user, posts, comments, watchlists, alerts, portfolio, notifications, activity] = await Promise.all([
+    const [user, posts, comments, watchlists, activity] = await Promise.all([
       UserModel.findById(userId),
       db.query(`SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC`, [userId]),
       db.query(`SELECT * FROM comments WHERE user_id = $1 ORDER BY created_at DESC`, [userId]),
       db.query(`SELECT * FROM watchlists WHERE user_id = $1 ORDER BY created_at DESC`, [userId]),
-      db.query(`SELECT * FROM alerts WHERE user_id = $1 ORDER BY created_at DESC`, [userId]),
-      db.query(`SELECT * FROM portfolio WHERE user_id = $1`, [userId]),
-      db.query(`SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100`, [userId]),
       db.query(`SELECT * FROM user_activity WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100`, [userId])
     ]);
 
@@ -462,9 +459,6 @@ export const exportUserData = async (req, res) => {
       posts: posts.rows,
       comments: comments.rows,
       watchlists: watchlists.rows,
-      alerts: alerts.rows,
-      portfolio: portfolio.rows[0] || null,
-      notifications: notifications.rows,
       activity: activity.rows,
       exportedAt: new Date().toISOString()
     };

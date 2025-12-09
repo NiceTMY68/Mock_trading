@@ -1,9 +1,3 @@
-/**
- * BlockUserButton Component
- * 
- * Button để block/unblock user với confirmation
- */
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -82,8 +76,8 @@ const BlockUserButton = ({
             <ShieldExclamationIcon className="w-6 h-6 text-rose-400" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">Chặn {userName}?</h3>
-            <p className="text-sm text-slate-400">Hành động này có thể hoàn tác</p>
+            <h3 className="text-lg font-semibold text-white">Block {userName}?</h3>
+            <p className="text-sm text-slate-400">This action can be undone</p>
           </div>
           <button
             onClick={() => setShowConfirm(false)}
@@ -98,11 +92,11 @@ const BlockUserButton = ({
                       border border-amber-500/20 mb-4">
           <ExclamationTriangleIcon className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-amber-200/80">
-            <p className="font-medium text-amber-300 mb-1">Khi bạn chặn ai đó:</p>
+            <p className="font-medium text-amber-300 mb-1">When you block someone:</p>
             <ul className="space-y-1 list-disc list-inside text-amber-200/70">
-              <li>Họ không thể xem bài viết của bạn</li>
-              <li>Họ không thể tương tác với bạn</li>
-              <li>Bạn sẽ không thấy nội dung của họ</li>
+              <li>They cannot view your posts</li>
+              <li>They cannot interact with you</li>
+              <li>You will not see their content</li>
             </ul>
           </div>
         </div>
@@ -110,12 +104,12 @@ const BlockUserButton = ({
         {/* Reason (optional) */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-slate-300 mb-2">
-            Lý do (không bắt buộc)
+            Reason (optional)
           </label>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Nhập lý do chặn..."
+            placeholder="Enter reason for blocking..."
             className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 
                      text-white placeholder-slate-500 focus:border-rose-500/50 
                      focus:ring-2 focus:ring-rose-500/20 resize-none"
@@ -130,7 +124,7 @@ const BlockUserButton = ({
             className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 text-white 
                      hover:bg-white/10 transition-colors font-medium"
           >
-            Hủy
+            Cancel
           </button>
           <button
             onClick={() => blockMutation.mutate(reason || undefined)}
@@ -145,7 +139,7 @@ const BlockUserButton = ({
             ) : (
               <>
                 <NoSymbolIcon className="w-5 h-5" />
-                Chặn
+                Block
               </>
             )}
           </button>
@@ -177,7 +171,7 @@ const BlockUserButton = ({
         >
           <NoSymbolIcon className="w-5 h-5" />
           <span className="text-sm font-medium">
-            {isBlocked ? 'Bỏ chặn người dùng' : 'Chặn người dùng'}
+            {isBlocked ? 'Unblock user' : 'Block user'}
           </span>
         </button>
 
@@ -203,7 +197,7 @@ const BlockUserButton = ({
         `}
       >
         <NoSymbolIcon className="w-4 h-4" />
-        {isBlocked ? 'Bỏ chặn' : 'Chặn'}
+        {isBlocked ? 'Unblock' : 'Block'}
       </button>
 
       {showConfirm && <ConfirmModal />}

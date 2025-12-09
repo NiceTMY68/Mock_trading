@@ -2,7 +2,7 @@ import apiClient from './client';
 import { ApiResponse } from '../types';
 
 export interface Activity {
-  type: 'post' | 'comment' | 'watchlist' | 'alert';
+  type: 'post' | 'comment' | 'watchlist';
   id: number;
   title: string;
   description?: string;
@@ -12,7 +12,6 @@ export interface Activity {
     commentId?: number;
     symbol?: string;
     watchlistName?: string;
-    alertId?: number;
   };
 }
 

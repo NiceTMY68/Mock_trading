@@ -9,7 +9,6 @@ import {
   ChartBarIcon,
   PresentationChartLineIcon,
   ServerIcon,
-  BellIcon,
   MegaphoneIcon,
   LockClosedIcon,
 } from '@heroicons/react/24/outline';
@@ -182,20 +181,7 @@ const AdminDashboardPage = () => {
         </div>
 
         {/* New Features */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <a
-            href="/admin/alerts"
-            className="group relative rounded-2xl border border-emerald-400/20 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-6 backdrop-blur-xl hover:border-emerald-400/40 transition-all shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-emerald-500/20 border border-emerald-400/30">
-                <BellIcon className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
-              </div>
-              <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-emerald-300 transition-colors">All Alerts</h3>
-            <p className="text-sm text-slate-400">View and manage all user alerts</p>
-          </a>
+        <div className="grid gap-4 md:grid-cols-2">
           <a
             href="/admin/announcements"
             className="group relative rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6 backdrop-blur-xl hover:border-purple-400/40 transition-all shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20"

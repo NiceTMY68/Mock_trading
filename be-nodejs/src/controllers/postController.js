@@ -2,17 +2,12 @@ import { validationResult } from 'express-validator';
 import { PostModel } from '../models/postModel.js';
 import { HashtagModel } from '../models/hashtagModel.js';
 import { ViewModel } from '../models/viewModel.js';
-import { NotificationModel } from '../models/notificationModel.js';
 import { FollowModel } from '../models/followModel.js';
 import { UploadModel } from '../models/uploadModel.js';
 import { logger } from '../utils/logger.js';
 import { createResponse } from '../utils/response.js';
 import { getContentModerationService } from '../services/contentModerationService.js';
 
-/**
- * Get posts with pagination
- * GET /api/posts
- */
 export const getPosts = async (req, res) => {
   try {
     const {
@@ -50,10 +45,6 @@ export const getPosts = async (req, res) => {
   }
 };
 
-/**
- * Get single post with details
- * GET /api/posts/:id
- */
 export const getPost = async (req, res) => {
   try {
     const { id } = req.params;
@@ -108,10 +99,6 @@ export const getPost = async (req, res) => {
   }
 };
 
-/**
- * Create new post
- * POST /api/posts
- */
 export const createPost = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -175,22 +162,12 @@ export const createPost = async (req, res) => {
       logger.error('Hashtag extraction failed:', hashtagError);
     }
 
-    // Notify followers about new post
+    // Notify followers about new post (removed - notifications feature disabled)
     try {
       const followers = await FollowModel.getFollowers(userId, { page: 0, size: 1000 });
       
-      for (const follower of followers.items) {
-        await NotificationModel.create({
-          userId: follower.follower_id,
-          type: 'new_post',
-          title: 'New Post',
-          message: `Someone you follow posted: "${title.substring(0, 50)}${title.length > 50 ? '...' : ''}"`,
-          data: { postId: post.id, authorId: userId }
-        });
-      }
-      
       if (followers.items.length > 0) {
-        logger.info(`Notified ${followers.items.length} followers about new post ${post.id}`);
+        logger.info(`Post ${post.id} created, ${followers.items.length} followers would be notified (notifications disabled)`);
       }
     } catch (notifyError) {
       logger.error('Failed to notify followers:', notifyError);
@@ -205,10 +182,6 @@ export const createPost = async (req, res) => {
   }
 };
 
-/**
- * Update post
- * PUT /api/posts/:id
- */
 export const updatePost = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -270,10 +243,6 @@ export const updatePost = async (req, res) => {
   }
 };
 
-/**
- * Delete post
- * DELETE /api/posts/:id
- */
 export const deletePost = async (req, res) => {
   try {
     const userId = req.user.userId;

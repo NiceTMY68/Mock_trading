@@ -204,7 +204,7 @@ const PostCard = ({ post, onView }: PostCardProps) => {
               onClick={() => setShowFullContent(!showFullContent)}
               className="text-xs text-emerald-400 hover:text-emerald-300 mt-2 font-medium"
             >
-              {showFullContent ? 'Thu gọn' : 'Xem thêm'}
+              {showFullContent ? 'Show less' : 'Show more'}
             </button>
           )}
         </div>

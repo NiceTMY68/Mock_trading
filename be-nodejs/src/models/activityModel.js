@@ -49,20 +49,6 @@ export class ActivityModel {
       LIMIT $2 OFFSET $3
     `;
 
-    const alertsQuery = `
-      SELECT 
-        'alert' as type,
-        id,
-        symbol as title,
-        CONCAT('Created alert for ', symbol) as description,
-        created_at,
-        user_id
-      FROM alerts
-      WHERE user_id = $1
-      ORDER BY created_at DESC
-      LIMIT $2 OFFSET $3
-    `;
-    
     // Execute queries with error handling
     const safeQuery = async (query, params) => {
       try {
@@ -73,11 +59,10 @@ export class ActivityModel {
       }
     };
 
-    const [posts, comments, watchlists, alerts] = await Promise.all([
+    const [posts, comments, watchlists] = await Promise.all([
       safeQuery(postsQuery, [userId, limit, offset]),
       safeQuery(commentsQuery, [userId, limit, offset]),
-      safeQuery(watchlistQuery, [userId, limit, offset]),
-      safeQuery(alertsQuery, [userId, limit, offset])
+      safeQuery(watchlistQuery, [userId, limit, offset])
     ]);
 
     const activities = [
@@ -104,14 +89,6 @@ export class ActivityModel {
         description: row.description,
         createdAt: row.created_at,
         metadata: { watchlistName: row.title }
-      })),
-      ...alerts.rows.map(row => ({
-        type: 'alert',
-        id: row.id,
-        title: row.title,
-        description: row.description,
-        createdAt: row.created_at,
-        metadata: { alertId: row.id, symbol: row.title }
       }))
     ];
 

@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/auth';
 import { getRecentActivity, Activity } from '../../api/activity';
 import { formatDistanceToNow } from 'date-fns';
 import { navigate } from '../../utils/navigation';
-import { DocumentTextIcon, ChatBubbleLeftRightIcon, StarIcon, BellIcon, BookmarkIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ChatBubbleLeftRightIcon, StarIcon, BookmarkIcon } from '@heroicons/react/24/outline';
 
 const RecentActivityPanel = () => {
   const { isAuthenticated } = useAuthStore();
@@ -28,8 +28,6 @@ const RecentActivityPanel = () => {
         return <ChatBubbleLeftRightIcon className={iconClass} />;
       case 'watchlist':
         return <StarIcon className={iconClass} />;
-      case 'alert':
-        return <BellIcon className={iconClass} />;
       default:
         return <BookmarkIcon className={iconClass} />;
     }
@@ -40,8 +38,6 @@ const RecentActivityPanel = () => {
       navigate(`/posts/${activity.metadata.postId}`);
     } else if (activity.metadata?.symbol) {
       navigate(`/coin/${activity.metadata.symbol}`);
-    } else if (activity.metadata?.alertId) {
-      navigate('/alerts');
     }
   };
 

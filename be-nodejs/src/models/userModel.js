@@ -119,18 +119,16 @@ export class UserModel {
   static async getStats(userId) {
     const db = getDatabase();
     
-    const [postsCount, commentsCount, watchlistsCount, alertsCount] = await Promise.all([
+    const [postsCount, commentsCount, watchlistsCount] = await Promise.all([
       db.query(`SELECT COUNT(*) as count FROM posts WHERE user_id = $1`, [userId]),
       db.query(`SELECT COUNT(*) as count FROM comments WHERE user_id = $1`, [userId]),
-      db.query(`SELECT COUNT(*) as count FROM watchlists WHERE user_id = $1`, [userId]),
-      db.query(`SELECT COUNT(*) as count FROM alerts WHERE user_id = $1 AND active = true`, [userId])
+      db.query(`SELECT COUNT(*) as count FROM watchlists WHERE user_id = $1`, [userId])
     ]);
 
     return {
       postsCount: parseInt(postsCount.rows[0].count),
       commentsCount: parseInt(commentsCount.rows[0].count),
-      watchlistsCount: parseInt(watchlistsCount.rows[0].count),
-      alertsCount: parseInt(alertsCount.rows[0].count)
+      watchlistsCount: parseInt(watchlistsCount.rows[0].count)
     };
   }
 }

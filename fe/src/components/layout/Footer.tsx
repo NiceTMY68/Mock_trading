@@ -18,7 +18,7 @@ const Footer = () => {
 
           {/* Product */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Sản phẩm</h4>
+            <h4 className="font-semibold text-white mb-4">Product</h4>
             <ul className="space-y-2 text-sm text-slate-400">
               <li>
                 <a href="/" className="hover:text-emerald-400 transition-colors">
@@ -27,17 +27,17 @@ const Footer = () => {
               </li>
               <li>
                 <a href="/news" className="hover:text-emerald-400 transition-colors">
-                  Tin tức
+                  News
                 </a>
               </li>
               <li>
                 <a href="/community" className="hover:text-emerald-400 transition-colors">
-                  Cộng đồng
+                  Community
                 </a>
               </li>
               <li>
                 <a href="/search" className="hover:text-emerald-400 transition-colors">
-                  Tìm kiếm
+                  Search
                 </a>
               </li>
             </ul>
@@ -45,26 +45,26 @@ const Footer = () => {
 
           {/* Company */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Công ty</h4>
+            <h4 className="font-semibold text-white mb-4">Company</h4>
             <ul className="space-y-2 text-sm text-slate-400">
               <li>
                 <a href="/about" className="hover:text-emerald-400 transition-colors">
-                  Về chúng tôi
+                  About Us
                 </a>
               </li>
               <li>
                 <a href="/contact" className="hover:text-emerald-400 transition-colors">
-                  Liên hệ
+                  Contact
                 </a>
               </li>
               <li>
                 <a href="/privacy" className="hover:text-emerald-400 transition-colors">
-                  Chính sách bảo mật
+                  Privacy Policy
                 </a>
               </li>
               <li>
                 <a href="/terms" className="hover:text-emerald-400 transition-colors">
-                  Điều khoản sử dụng
+                  Terms of Service
                 </a>
               </li>
             </ul>

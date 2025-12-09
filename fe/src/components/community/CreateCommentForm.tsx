@@ -42,12 +42,12 @@ const CreateCommentForm = ({ postId, parentId, onSuccess }: CreateCommentFormPro
     return (
       <>
         <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-          <p className="text-sm text-slate-400 mb-2">Đăng nhập để bình luận</p>
+          <p className="text-sm text-slate-400 mb-2">Login to comment</p>
           <button
             onClick={() => setShowLoginModal(true)}
             className="text-emerald-400 hover:text-emerald-300 underline text-sm"
           >
-            Đăng nhập / Đăng ký
+            Login / Sign up
           </button>
         </div>
         <LoginModal

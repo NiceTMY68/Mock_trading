@@ -1,9 +1,3 @@
-/**
- * HashtagPage
- * 
- * Hiển thị bài viết theo hashtag
- */
-
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -61,7 +55,7 @@ const HashtagPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-white">#{tag}</h1>
               <p className="text-slate-400">
-                {postsData?.total || 0} bài viết
+                {postsData?.total || 0} posts
               </p>
             </div>
           </div>
@@ -80,7 +74,7 @@ const HashtagPage = () => {
               }`}
             >
               <FireIcon className="w-4 h-4" />
-              Nổi bật
+              Trending
             </button>
             
             <button
@@ -92,7 +86,7 @@ const HashtagPage = () => {
               }`}
             >
               <ClockIcon className="w-4 h-4" />
-              Mới nhất
+              Latest
             </button>
           </div>
         </header>
@@ -113,9 +107,9 @@ const HashtagPage = () => {
             ) : postsData?.posts.length === 0 ? (
               <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/10">
                 <HashtagIcon className="w-12 h-12 mx-auto text-slate-500 mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">Chưa có bài viết</h3>
+                <h3 className="text-lg font-medium text-white mb-2">No posts</h3>
                 <p className="text-slate-400 text-sm">
-                  Hãy là người đầu tiên viết về #{tag}
+                  Be the first to write about #{tag}
                 </p>
               </div>
             ) : (
@@ -213,7 +207,7 @@ const HashtagPage = () => {
                       className="px-4 py-2 rounded-lg bg-white/5 text-slate-300 
                                hover:bg-white/10 disabled:opacity-50"
                     >
-                      Sau
+                      Next
                     </button>
                   </div>
                 )}
