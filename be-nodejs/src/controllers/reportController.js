@@ -1,4 +1,6 @@
 import { ReportModel } from '../models/reportModel.js';
+import { PostModel } from '../models/postModel.js';
+import { CommentModel } from '../models/commentModel.js';
 import { logger } from '../utils/logger.js';
 import { createResponse } from '../utils/response.js';
 
@@ -18,6 +20,30 @@ export const createReport = async (req, res) => {
     const validTypes = ['post', 'comment', 'user'];
     if (!validTypes.includes(targetType)) {
       return res.status(400).json(createResponse(false, 'Invalid target type'));
+    }
+
+    // Validate that user cannot report their own content
+    let targetUserId = null;
+    
+    if (targetType === 'post') {
+      const post = await PostModel.findById(parseInt(targetId));
+      if (!post) {
+        return res.status(404).json(createResponse(false, 'Post not found'));
+      }
+      targetUserId = post.user_id;
+    } else if (targetType === 'comment') {
+      const comment = await CommentModel.findById(parseInt(targetId));
+      if (!comment) {
+        return res.status(404).json(createResponse(false, 'Comment not found'));
+      }
+      targetUserId = comment.user_id;
+    } else if (targetType === 'user') {
+      targetUserId = parseInt(targetId);
+    }
+
+    // Check if user is trying to report their own content
+    if (targetUserId && targetUserId === reporterId) {
+      return res.status(400).json(createResponse(false, 'You cannot report your own content. You can delete it instead.'));
     }
 
     const report = await ReportModel.create({

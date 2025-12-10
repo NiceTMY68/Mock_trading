@@ -26,7 +26,7 @@ interface PostCardProps {
 }
 
 const PostCard = ({ post, onView }: PostCardProps) => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const queryClient = useQueryClient();
   
   const postData = {
@@ -44,6 +44,8 @@ const PostCard = ({ post, onView }: PostCardProps) => {
     userReaction: post.userReaction || (post as any).user_reaction,
   };
 
+  const isAuthor = isAuthenticated && user && postData.userId === user.id;
+
   const [showFullContent, setShowFullContent] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -57,6 +59,20 @@ const PostCard = ({ post, onView }: PostCardProps) => {
       queryClient.invalidateQueries({ queryKey: ['post', post.id] });
     }
   });
+
+  const deletePostMutation = useMutation({
+    mutationFn: () => postsAPI.deletePost(post.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      setShowMenu(false);
+    }
+  });
+
+  const handleDelete = () => {
+    if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
+      deletePostMutation.mutate();
+    }
+  };
 
   const requireAuth = (callback: () => void) => {
     if (!isAuthenticated) {
@@ -171,12 +187,25 @@ const PostCard = ({ post, onView }: PostCardProps) => {
               />
               <div className="absolute right-0 top-full mt-1 z-20 w-48 py-1 rounded-xl 
                             bg-slate-800 border border-white/10 shadow-xl">
-                {isAuthenticated && postData.userId && (
-                  <ReportButton 
-                    targetType="post" 
-                    targetId={post.id}
-                    variant="menuItem"
-                  />
+                {isAuthor ? (
+                  <button
+                    onClick={handleDelete}
+                    disabled={deletePostMutation.isPending}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    {deletePostMutation.isPending ? 'Đang xóa...' : 'Xóa bài viết'}
+                  </button>
+                ) : (
+                  isAuthenticated && postData.userId && (
+                    <ReportButton 
+                      targetType="post" 
+                      targetId={post.id}
+                      variant="menuItem"
+                    />
+                  )
                 )}
               </div>
             </>

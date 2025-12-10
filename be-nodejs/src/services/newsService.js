@@ -8,6 +8,19 @@ class NewsService {
     this.apiUrl = process.env.NEWS_API_URL || 'https://newsdata.io/api/1';
     this.cacheTTL = 15 * 60;
     
+    // Map category to search query for NewsData.io API
+    this.categoryMap = {
+      'crypto': 'crypto OR cryptocurrency OR bitcoin OR ethereum OR blockchain OR defi OR nft',
+      'bitcoin': 'bitcoin OR BTC',
+      'ethereum': 'ethereum OR ETH OR ethereum blockchain',
+      'defi': 'defi OR decentralized finance OR DeFi protocol',
+      'nft': 'nft OR non-fungible token OR NFT marketplace',
+      'regulation': 'crypto regulation OR cryptocurrency regulation OR crypto law OR SEC crypto',
+      'market': 'crypto market OR cryptocurrency market OR crypto price OR crypto trading',
+      'technology': 'blockchain technology OR crypto technology OR cryptocurrency technology',
+      'adoption': 'crypto adoption OR cryptocurrency adoption OR bitcoin adoption'
+    };
+    
     if (!this.apiKey) {
       logger.warn('NEWS_API_KEY is not set. News features will not work.');
     }
@@ -32,14 +45,18 @@ class NewsService {
       nextPage = null
     } = options;
 
-    const cacheKey = `news:crypto:${language}:${nextPage || 'first'}:${size}`;
+    // Map category to search query
+    const searchQuery = this.categoryMap[category] || category;
+    
+    // Include category in cache key to avoid cache collision
+    const cacheKey = `news:${category}:${language}:${nextPage || 'first'}:${size}`;
 
     try {
       const redis = getRedis();
       if (redis) {
         const cached = await redis.get(cacheKey);
         if (cached) {
-          logger.debug('Returning cached news');
+          logger.debug(`Returning cached news for category: ${category}`);
           return JSON.parse(cached);
         }
       }
@@ -50,9 +67,7 @@ class NewsService {
 
       const params = {
         apikey: this.apiKey,
-        q: category === 'crypto' 
-          ? 'crypto OR cryptocurrency OR bitcoin OR ethereum OR blockchain OR defi OR nft'
-          : category,
+        q: searchQuery,
         language: language,
         size: Math.min(size, 10)
       };
@@ -65,7 +80,7 @@ class NewsService {
         params.country = country;
       }
 
-      logger.info(`Fetching crypto news from NewsData.io${nextPage ? ' (nextPage)' : ' (first page)'}`);
+      logger.info(`Fetching news for category "${category}" from NewsData.io (query: ${searchQuery})${nextPage ? ' (nextPage)' : ' (first page)'}`);
       const response = await axios.get(`${this.apiUrl}/news`, {
         params,
         timeout: 10000
@@ -186,10 +201,11 @@ class NewsService {
 
   /**
    * Get news by category
-   * @param {string} category - News category
+   * @param {string} category - News category (bitcoin, ethereum, defi, nft, etc.)
+   * @param {Object} options - Additional options (language, page, size, etc.)
    */
-  async getNewsByCategory(category = 'crypto') {
-    return this.getCryptoNews({ category });
+  async getNewsByCategory(category = 'crypto', options = {}) {
+    return this.getCryptoNews({ category, ...options });
   }
 }
 

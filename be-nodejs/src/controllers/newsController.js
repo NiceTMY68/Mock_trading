@@ -67,10 +67,15 @@ export const searchNews = async (req, res) => {
 export const getNewsByCategory = async (req, res) => {
   try {
     const { category = 'crypto' } = req.params;
-    const { language = 'en', page = 1, size = 10 } = req.query;
+    const { language = 'en', page = 1, size = 10, country = null } = req.query;
 
     const newsService = getNewsService();
-    const news = await newsService.getNewsByCategory(category);
+    const news = await newsService.getNewsByCategory(category, {
+      language,
+      page: parseInt(page),
+      size: parseInt(size),
+      country
+    });
 
     return paginatedResponse(
       res,

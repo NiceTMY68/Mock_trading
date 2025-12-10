@@ -10,7 +10,9 @@ let pool = null;
 const getDatabaseConfig = () => {
   // Helper to ensure password is always a string (required by pg library)
   const getPassword = () => {
-    return String(process.env.DB_PASS || process.env.DB_PASSWORD || '');
+    const password = process.env.DB_PASS || process.env.DB_PASSWORD;
+    // Return empty string if password is undefined/null, otherwise return as string
+    return password ? String(password) : '';
   };
 
   // If DB_URL is provided (from be backend), parse it
@@ -34,12 +36,13 @@ const getDatabaseConfig = () => {
     const standardMatch = process.env.DB_URL.match(standardPattern);
     
     if (standardMatch) {
+      const urlPassword = standardMatch[2];
       return {
         host: standardMatch[3],
         port: parseInt(standardMatch[4]),
         database: standardMatch[5],
         user: standardMatch[1] || process.env.DB_USER || 'postgres',
-        password: standardMatch[2] || getPassword(),
+        password: urlPassword ? String(urlPassword) : getPassword(),
       };
     }
   }
@@ -60,13 +63,35 @@ export const initDatabase = async () => {
   }
 
   const config = getDatabaseConfig();
-
-  pool = new Pool({
-    ...config,
+  
+  // Process password: convert to string if exists, or omit if empty
+  // pg library with SCRAM doesn't accept empty string for password
+  let password = null;
+  if (config.password !== undefined && config.password !== null && config.password !== '') {
+    password = String(config.password);
+  }
+  
+  // Build pool config - only include password if it has a value
+  const poolConfig = {
+    host: config.host,
+    port: config.port,
+    database: config.database,
+    user: config.user,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
-  });
+  };
+  
+  // Only add password field if it has a value (non-empty string)
+  if (password !== null && password !== '') {
+    poolConfig.password = password;
+  }
+
+  // Debug: log config (without showing password value)
+  const hasPassword = poolConfig.password !== undefined;
+  console.log(`🔍 Database config: host=${poolConfig.host}, port=${poolConfig.port}, db=${poolConfig.database}, user=${poolConfig.user}, has_password=${hasPassword}`);
+
+  pool = new Pool(poolConfig);
 
   // Handle pool errors
   pool.on('error', (err) => {
